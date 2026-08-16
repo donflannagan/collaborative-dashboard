@@ -1,0 +1,156 @@
+services:
+  # API Gateway - Main entry point (port 8080)
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: collaborative-dashboard-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      GATEWAY_PORT: 8080
+      NODE_BACKEND_HOST: backend-node
+      NODE_BACKEND_PORT: 5000
+      FASTAPI_BACKEND_HOST: fastapi-backend
+      FASTAPI_BACKEND_PORT: 5001
+      JAVA_BACKEND_HOST: java-backend
+      JAVA_BACKEND_PORT: 5002
+      CSHARP_BACKEND_HOST: backend-csharp
+      CSHARP_BACKEND_PORT: 5003
+    depends_on:
+      - backend-node
+      - fastapi-backend
+      - java-backend
+      - backend-csharp
+    networks:
+      - collaborative-network
+    volumes:
+      - ./gateway:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # MongoDB - Shared database
+  mongodb:
+    image: mongo:7.0
+    container_name: collaborative-dashboard-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-collaborative-dashboard}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - collaborative-network
+    healthcheck:
+      test: echo 'db.adminCommand("ping")' | mongosh localhost:27017/test -u $${MONGO_ROOT_USER} -p $${MONGO_ROOT_PASSWORD}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js Backend (port 5000)
+  backend-node:
+    build:
+      context: ./backend-node
+      dockerfile: Dockerfile
+    container_name: collaborative-dashboard-backend-node
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5000
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB_NAME:-collaborative-dashboard}?authSource=admin
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - collaborative-network
+    volumes:
+      - ./backend-node:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # FastAPI Backend (port 5001)
+  fastapi-backend:
+    build:
+      context: ./backend-fastapi
+      dockerfile: Dockerfile
+    container_name: collaborative-dashboard-fastapi-backend
+    ports:
+      - "5001:5001"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB_NAME:-collaborative-dashboard}?authSource=admin
+      MONGO_DB_NAME: ${MONGO_DB_NAME:-collaborative-dashboard}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - collaborative-network
+    volumes:
+      - ./backend-fastapi:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 5001 --reload
+
+  # Java Backend (port 5002) - Placeholder for future implementation
+  java-backend:
+    build:
+      context: ./backend-java
+      dockerfile: Dockerfile
+    container_name: collaborative-dashboard-java-backend
+    ports:
+      - "5002:5002"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB_NAME:-collaborative-dashboard}?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - collaborative-network
+
+  # C# Backend (port 5003)
+  backend-csharp:
+    build:
+      context: ./backend-csharp
+      dockerfile: Dockerfile
+    container_name: collaborative-dashboard-backend-csharp
+    ports:
+      - "5003:5003"
+    environment:
+      ASPNETCORE_URLS: http://+:5003
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB_NAME:-collaborative-dashboard}?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - collaborative-network
+
+  # React Frontend (port 3000)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: collaborative-dashboard-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    depends_on:
+      - gateway
+    networks:
+      - collaborative-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
+
+volumes:
+  mongodb_data:
+
+networks:
+  collaborative-network:
+    driver: bridge
+
