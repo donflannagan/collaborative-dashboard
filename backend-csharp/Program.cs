@@ -2,6 +2,10 @@ using CollaborativeDashboard.Api.Models;
 using CollaborativeDashboard.Api.Services;
 using CollaborativeDashboard.Api.Controllers;
 using MongoDB.Driver;
+using MongoDB.Bson.Serialization.Conventions;
+
+var conventionPack = new ConventionPack { new CamelCaseElementNameConvention() };
+ConventionRegistry.Register("collaborative-dashboard-camel-case", conventionPack, _ => true);
 
 var builder = WebApplication.CreateBuilder(args);
 
