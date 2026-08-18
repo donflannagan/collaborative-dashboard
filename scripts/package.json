@@ -1,0 +1,15 @@
+{
+  "name": "collaborative-dashboard-seed",
+  "version": "1.0.0",
+  "description": "Standalone MongoDB seed script shared across all backend implementations",
+  "private": true,
+  "main": "seed.js",
+  "scripts": {
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "mongodb": "^6.9.0"
+  }
+}

@@ -9,6 +9,7 @@ public sealed class MongoDbSettings
     public string DatabaseName { get; set; } = "collaborative-dashboard";
 }
 
+[BsonIgnoreExtraElements]
 public sealed class UserDocument
 {
     [BsonId]
@@ -18,6 +19,7 @@ public sealed class UserDocument
     public string Username { get; set; } = string.Empty;
 }
 
+[BsonIgnoreExtraElements]
 public sealed class BoardDocument
 {
     [BsonId]
@@ -34,6 +36,7 @@ public sealed class BoardDocument
     public DateTime UpdatedAt { get; set; }
 }
 
+[BsonIgnoreExtraElements]
 public sealed class TaskDocument
 {
     [BsonId]
