@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import './User'; // ensure User schema is registered before populate() resolves it
 
 export interface IBoard extends Document {
   _id: mongoose.Types.ObjectId;

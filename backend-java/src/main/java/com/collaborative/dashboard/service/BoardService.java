@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -31,7 +32,13 @@ public class BoardService {
         if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException("User ID is required");
         }
-        return response(boardRepository.findByOwnerOrMembers(userId, userId));
+        ObjectId userObjectId;
+        try {
+            userObjectId = new ObjectId(userId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid User ID format");
+        }
+        return response(boardRepository.findByOwnerOrMembers(userObjectId));
     }
 
     private ApiResponse<List<BoardResponse>> response(List<Board> boards) {
