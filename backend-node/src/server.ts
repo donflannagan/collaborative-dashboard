@@ -29,11 +29,12 @@ app.use(morgan('dev'));
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 
+// API Routes
+// todo: this endpoint should take an action, like validate the connection to the database 
+// as well as express server health, and return a more detailed response
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
-
-// API Routes
 app.use('/api/boards', boardRoutes);
 app.use('/api/tasks', taskRoutes);
 
