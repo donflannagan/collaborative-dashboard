@@ -7,6 +7,9 @@ export * from './models/Board';
 // Task types
 export * from './models/Task';
 
+// Health types
+export * from './models/Health';  
+
 // Response envelope
 export interface ApiResponse<T> {
   success: boolean;
