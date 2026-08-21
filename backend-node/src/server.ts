@@ -9,6 +9,7 @@ import { registerSocketEvents } from './socket/socketManager';
 import { connectDB } from './config/database';
 import boardRoutes from './routes/boardRoutes';
 import taskRoutes from './routes/taskRoutes';
+import healthRouter from './routes/healthRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -29,12 +30,8 @@ app.use(morgan('dev'));
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 
-// API Routes
-// todo: this endpoint should take an action, like validate the connection to the database 
-// as well as express server health, and return a more detailed response
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+// define routes
+app.use('/api/health', healthRouter);
 app.use('/api/boards', boardRoutes);
 app.use('/api/tasks', taskRoutes);
 
