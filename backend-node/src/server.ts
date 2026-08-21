@@ -9,6 +9,7 @@ import { registerSocketEvents } from './socket/socketManager';
 import { connectDB } from './config/database';
 import boardRoutes from './routes/boardRoutes';
 import taskRoutes from './routes/taskRoutes';
+import healthRouter from './routes/healthRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -29,11 +30,8 @@ app.use(morgan('dev'));
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// API Routes
+// define routes
+app.use('/api/health', healthRouter);
 app.use('/api/boards', boardRoutes);
 app.use('/api/tasks', taskRoutes);
 
