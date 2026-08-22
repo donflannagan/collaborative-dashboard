@@ -50,12 +50,62 @@ public sealed class BoardsControllerTests
     [Fact]
     public async Task GetByUserPassesUserIdToService()
     {
-        boardService.Setup(service => service.GetByUserAsync("user-1", It.IsAny<CancellationToken>()))
+        boardService.Setup(service => service.GetBoardsByUserAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<BoardResponse>(true, [], 0));
 
         var response = await controller.GetByUser("user-1", CancellationToken.None);
 
         Assert.True(response.Success);
-        boardService.Verify(service => service.GetByUserAsync("user-1", It.IsAny<CancellationToken>()), Times.Once);
+        boardService.Verify(service => service.GetBoardsByUserAsync("user-1", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetBoardByIdPassesBoardIdToService()
+    {
+        boardService.Setup(service => service.GetBoardByIdAsync("board-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiResponse<BoardResponse>(true, [], 0));
+
+        var response = await controller.GetById("board-1", CancellationToken.None);
+
+        Assert.True(response.Success);
+        boardService.Verify(service => service.GetBoardByIdAsync("board-1", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteBoardPassesBoardIdToService()
+    {
+        boardService.Setup(service => service.DeleteBoardAsync("board-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiResponse<BoardResponse>(true, [], 0));
+
+        var response = await controller.Delete("board-1", CancellationToken.None);
+
+        Assert.True(response.Success);
+        boardService.Verify(service => service.DeleteBoardAsync("board-1", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateBoardPassesBoardToService()
+    {
+        var board = new BoardDocument { Id = "board-1", Title = "Project Alpha" };
+        boardService.Setup(service => service.CreateBoardAsync(board, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiResponse<BoardResponse>(true, [], 0));
+
+        var response = await controller.Create(board, CancellationToken.None);
+
+        Assert.True(response.Success);
+        boardService.Verify(service => service.CreateBoardAsync(board, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateBoardPassesBoardToService()
+    {
+        var board = new BoardDocument { Id = "board-1", Title = "Project Alpha" };
+        boardService.Setup(service => service.UpdateBoardAsync(board, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiResponse<BoardResponse>(true, [], 0));
+
+        var response = await controller.Update(board, CancellationToken.None);
+
+        Assert.True(response.Success);
+        boardService.Verify(service => service.UpdateBoardAsync(board, It.IsAny<CancellationToken>()), Times.Once);
     }
 }
