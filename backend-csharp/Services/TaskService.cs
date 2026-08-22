@@ -38,7 +38,7 @@ public class TaskService
         return new ApiResponse<TaskResponse>(true, data, data.Count);
     }
 
-    public virtual async Task<ApiResponse<TaskResponse>> GetByIdAsync(string taskId, CancellationToken cancellationToken)
+    public virtual async Task<ApiResponse<TaskResponse>> GetTaskByIdAsync(string taskId, CancellationToken cancellationToken)
     {
         ValidateTaskId(taskId);
 
@@ -89,6 +89,42 @@ public class TaskService
             byId.TryGetValue(request.CreatedBy, out var creator) ? Summary(creator) : null,
             request.CreatedAt, request.UpdatedAt);
         return new ApiResponse<TaskResponse>(true, new[] { data }.ToList(), 1);
+    }
+
+    public virtual async Task<ApiResponse<TaskResponse>> UpdateTask(TaskDocument request, CancellationToken cancellationToken)
+    {
+        if (request == null) throw new ArgumentException("Task document cannot be null");
+        ValidateTaskId(request.Id);
+        ValidateBoardId(request.BoardId);
+
+        var filter = Builders<TaskDocument>.Filter.Eq(task => task.Id, request.Id);
+        var update = Builders<TaskDocument>.Update
+            .Set(task => task.Title, request.Title)
+            .Set(task => task.Description, request.Description)
+            .Set(task => task.BoardId, request.BoardId)
+            .Set(task => task.ColumnId, request.ColumnId)
+            .Set(task => task.Position, request.Position)
+            .Set(task => task.Assignee, request.Assignee)
+            .Set(task => task.Priority, request.Priority)
+            .Set(task => task.DueDate, request.DueDate)
+            .Set(task => task.Tags, request.Tags)
+            .Set(task => task.UpdatedAt, request.UpdatedAt);
+
+        var result = await db.Tasks.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+        if (result.MatchedCount == 0) throw new ArgumentException("Task not found");
+
+        return await GetTaskByIdAsync(request.Id, cancellationToken);
+    }
+
+    public virtual async Task<ApiResponse<TaskResponse>> DeleteTask(string taskId, CancellationToken cancellationToken)
+    {
+        ValidateTaskId(taskId);
+
+        var filter = Builders<TaskDocument>.Filter.Eq(task => task.Id, taskId);
+        var result = await db.Tasks.DeleteOneAsync(filter, cancellationToken);
+        if (result.DeletedCount == 0) throw new ArgumentException("Task not found");
+
+        return new ApiResponse<TaskResponse>(true, new List<TaskResponse>(), 0);
     }
 
     private static void ValidateBoardId(string boardId) 

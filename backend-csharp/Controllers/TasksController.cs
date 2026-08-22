@@ -9,13 +9,17 @@ namespace CollaborativeDashboard.Api.Controllers;
 public sealed class TasksController(TaskService service) : ControllerBase
 {
     [HttpGet("board/{boardId}")]
-    public Task<ApiResponse<TaskResponse>> GetByBoard(string boardId, CancellationToken cancellationToken) => service.GetByBoardAsync(boardId, cancellationToken);
+    public Task<ApiResponse<TaskResponse>> GetTasksByBoard(string boardId, CancellationToken cancellationToken) => service.GetByBoardAsync(boardId, cancellationToken);
 
     [HttpGet("{taskId}")]
-    public Task<ApiResponse<TaskResponse>> GetById(string taskId, CancellationToken cancellationToken) => service.GetByIdAsync(taskId, cancellationToken);
+    public Task<ApiResponse<TaskResponse>> GetTaskById(string taskId, CancellationToken cancellationToken) => service.GetTaskByIdAsync(taskId, cancellationToken);
 
     [HttpPost("add")]
     public Task<ApiResponse<TaskResponse>> AddTask(TaskDocument request, CancellationToken cancellationToken) => service.AddTask(request, cancellationToken);
 
+    [HttpPut("update")]
+    public Task<ApiResponse<TaskResponse>> UpdateTask(TaskDocument request, CancellationToken cancellationToken) => service.UpdateTask(request, cancellationToken);
 
+    [HttpDelete("delete/{taskId}")]
+    public Task<ApiResponse<TaskResponse>> DeleteTask(string taskId, CancellationToken cancellationToken) => service.DeleteTask(taskId, cancellationToken);
 }
