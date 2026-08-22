@@ -22,15 +22,16 @@ public sealed class TasksControllerTests
     [Fact]
     public async Task GetByBoardReturnsTasksAndCount()
     {
-        var task = new TaskResponse("task-1", "Implement API", null, "board-1", "To Do", 0, null, "high", null, ["csharp"], null, default, default);
+        var taskTitle = "Get Tasks By Board ID Unit Test";
+        var task = new TaskResponse("task-1", taskTitle, null, "board-1", "To Do", 0, null, "high", null, ["csharp"], null, default, default);
         taskService.Setup(service => service.GetByBoardAsync("board-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<TaskResponse>(true, [task], 1));
 
-        var response = await controller.GetByBoard("board-1", CancellationToken.None);
+        var response = await controller.GetTasksByBoard("board-1", CancellationToken.None);
 
         Assert.True(response.Success);
         Assert.Single(response.Data);
-        Assert.Equal("Implement API", response.Data[0].Title);
+        Assert.Equal(taskTitle, response.Data[0].Title);
         Assert.Equal(1, response.Count);
     }
 
@@ -40,7 +41,7 @@ public sealed class TasksControllerTests
         taskService.Setup(service => service.GetByBoardAsync("board-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<TaskResponse>(true, [], 0));
 
-        var response = await controller.GetByBoard("board-1", CancellationToken.None);
+        var response = await controller.GetTasksByBoard("board-1", CancellationToken.None);
 
         Assert.True(response.Success);
         Assert.Empty(response.Data);
@@ -53,7 +54,7 @@ public sealed class TasksControllerTests
         taskService.Setup(service => service.GetByBoardAsync("board-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<TaskResponse>(true, [], 0));
 
-        await controller.GetByBoard("board-1", CancellationToken.None);
+        await controller.GetTasksByBoard("board-1", CancellationToken.None);
 
         taskService.Verify(service => service.GetByBoardAsync("board-1", It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -61,8 +62,9 @@ public sealed class TasksControllerTests
     [Fact]
     public async Task GetByIdReturnsTaskAndCount()
     {
+        var taskTitle = "Task GetById Unit Test";
         var task = new TaskResponse("task-1", 
-            "Implement API", 
+            taskTitle, 
             null, 
             "board-1", 
             "To Do", 
@@ -74,26 +76,26 @@ public sealed class TasksControllerTests
             null, 
             default, 
             default);
-        taskService.Setup(service => service.GetByIdAsync("task-1", It.IsAny<CancellationToken>()))
+        taskService.Setup(service => service.GetTaskByIdAsync("task-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<TaskResponse>(true, [task], 1));
 
-        var response = await controller.GetById("task-1", CancellationToken.None);
+        var response = await controller.GetTaskById("task-1", CancellationToken.None);
 
         Assert.True(response.Success);
         Assert.Single(response.Data);
-        Assert.Equal("Implement API", response.Data[0].Title);
+        Assert.Equal(taskTitle, response.Data[0].Title);
         Assert.Equal(1, response.Count);
     }
 
     [Fact]
     public async Task GetByIdPassesTaskIdToService()
     {
-        taskService.Setup(service => service.GetByIdAsync("task-1", It.IsAny<CancellationToken>()))
+        taskService.Setup(service => service.GetTaskByIdAsync("task-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<TaskResponse>(true, [], 0));
 
-        await controller.GetById("task-1", CancellationToken.None);
+        await controller.GetTaskById("task-1", CancellationToken.None);
 
-        taskService.Verify(service => service.GetByIdAsync("task-1", It.IsAny<CancellationToken>()), Times.Once);
+        taskService.Verify(service => service.GetTaskByIdAsync("task-1", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -102,7 +104,7 @@ public sealed class TasksControllerTests
         var request = new TaskDocument
         {
             Id = "task-1",
-            Title = "Implement API",
+            Title = "Task Create Unit Test",
             BoardId = "board-1",
             ColumnId = "To Do",
             Position = 0,
@@ -116,5 +118,38 @@ public sealed class TasksControllerTests
         await controller.AddTask(request, CancellationToken.None);
 
         taskService.Verify(service => service.AddTask(request, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteTaskPassesTaskIdToService()
+    {
+        taskService.Setup(service => service.DeleteTask("task-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiResponse<TaskResponse>(true, [], 0));
+
+        await controller.DeleteTask("task-1", CancellationToken.None);
+
+        taskService.Verify(service => service.DeleteTask("task-1", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateTaskPassesRequestToService()
+    {
+        var request = new TaskDocument
+        {
+            Id = "task-1",
+            Title = "Task Update Unit Test",
+            BoardId = "board-1",
+            ColumnId = "To Do",
+            Position = 0,
+            Priority = "high",
+            Tags = new List<string> { "csharp" }
+        };
+
+        taskService.Setup(service => service.UpdateTask(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiResponse<TaskResponse>(true, [], 0));
+
+        await controller.UpdateTask(request, CancellationToken.None);
+
+        taskService.Verify(service => service.UpdateTask(request, It.IsAny<CancellationToken>()), Times.Once);
     }
 }
