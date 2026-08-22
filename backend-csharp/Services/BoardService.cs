@@ -15,7 +15,7 @@ public class BoardService
         return await BuildResponse(boards, cancellationToken);
     }
 
-    public virtual async Task<ApiResponse<BoardResponse>> GetByUserAsync(string userId, CancellationToken cancellationToken)
+    public virtual async Task<ApiResponse<BoardResponse>> GetBoardsByUserAsync(string userId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required");
         var filter = Builders<BoardDocument>.Filter.Or(
@@ -23,6 +23,37 @@ public class BoardService
             Builders<BoardDocument>.Filter.AnyEq(board => board.Members, userId));
         var boards = await db.Boards.Find(filter).ToListAsync(cancellationToken);
         return await BuildResponse(boards, cancellationToken);
+    }
+
+    public virtual async Task<ApiResponse<BoardResponse>> GetBoardByIdAsync(string boardId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(boardId)) throw new ArgumentException("Board ID is required");
+        var filter = Builders<BoardDocument>.Filter.Eq(board => board.Id, boardId);
+        var board = await db.Boards.Find(filter).FirstOrDefaultAsync(cancellationToken);
+        return await BuildResponse(board != null ? new List<BoardDocument> { board } : new List<BoardDocument>(), cancellationToken);
+    }
+
+    public virtual async Task<ApiResponse<BoardResponse>> CreateBoardAsync(BoardDocument board, CancellationToken cancellationToken)
+    {
+        if (board == null) throw new ArgumentNullException(nameof(board));
+        await db.Boards.InsertOneAsync(board, null, cancellationToken);
+        return await BuildResponse(new List<BoardDocument> { board }, cancellationToken);
+    }
+
+    public virtual async Task<ApiResponse<BoardResponse>> UpdateBoardAsync(BoardDocument board, CancellationToken cancellationToken)
+    {
+        if (board == null) throw new ArgumentNullException(nameof(board));
+        var filter = Builders<BoardDocument>.Filter.Eq(b => b.Id, board.Id);
+        await db.Boards.ReplaceOneAsync(filter, board, new ReplaceOptions { IsUpsert = false }, cancellationToken);
+        return await BuildResponse(new List<BoardDocument> { board }, cancellationToken);
+    }
+
+    public virtual async Task<ApiResponse<BoardResponse>> DeleteBoardAsync(string boardId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(boardId)) throw new ArgumentException("Board ID is required");
+        var filter = Builders<BoardDocument>.Filter.Eq(board => board.Id, boardId);
+        var board = await db.Boards.FindOneAndDeleteAsync(filter, null, cancellationToken);
+        return await BuildResponse(board != null ? new List<BoardDocument> { board } : new List<BoardDocument>(), cancellationToken);
     }
 
     private async Task<ApiResponse<BoardResponse>> BuildResponse(List<BoardDocument> boards, CancellationToken cancellationToken)

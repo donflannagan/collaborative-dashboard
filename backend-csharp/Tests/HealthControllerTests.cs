@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace CollaborativeDashboard.Api.Tests;
 
-public sealed class HealthTests
+public sealed class HealthControllerTests
 {
     [Fact]
     public async Task HealthEndpointReturnsOk()
