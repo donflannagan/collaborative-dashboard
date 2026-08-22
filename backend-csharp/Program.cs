@@ -16,6 +16,7 @@ builder.Services.AddSingleton<IMongoClient>(_ =>
 builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<BoardService>();
 builder.Services.AddScoped<TaskService>();
+builder.Services.AddScoped<HealthService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -25,9 +26,6 @@ var app = builder.Build();
 app.MapErrors();
 app.UseSwagger();
 app.UseSwaggerUI();
-var healthResponse = () => Results.Ok(new { status = "ok", service = "csharp-backend" });
-app.MapGet("/health", healthResponse);
-app.MapGet("/api/health", healthResponse);
 app.MapControllers();
 
 app.Run();
