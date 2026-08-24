@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { getAllBoards, getBoardsByUser } from '../../controllers/boardController';
+import { getAllBoards, getBoardsByUser, deleteBoard, createBoard, updateBoard } from '../../controllers/boardController';
 import { Board } from '../../models/Board';
 import { User } from '../../models/User';
 
@@ -180,4 +180,198 @@ describe('Board Controller', () => {
       expect(mockNext).toHaveBeenCalledWith(error);
     });
   });
+
+  describe('deleteBoard', () => {
+    it('should delete a board successfully', async () => {
+      const boardId = new mongoose.Types.ObjectId().toString();
+      const mockBoard = {
+        _id: boardId,
+        title: 'Team Board',
+        owner: { _id: new mongoose.Types.ObjectId(), username: 'owner', email: 'owner@example.com' },
+        members: [],
+        columns: ['To Do', 'In Progress', 'Done'],
+      };
+
+      mockRequest = { params: { boardId } };
+
+      (Board.findByIdAndDelete as jest.Mock).mockResolvedValue(mockBoard);
+
+      await deleteBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(Board.findByIdAndDelete).toHaveBeenCalledWith(boardId);
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockBoard,
+      });
+    });
+    it('should handle errors and pass to next middleware', async () => {
+      const boardId = new mongoose.Types.ObjectId().toString();
+      const error = new Error('Database error');
+
+      mockRequest = { params: { boardId } };
+
+      (Board.findByIdAndDelete as jest.Mock).mockRejectedValue(error);
+
+      await deleteBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+  });
+  
+    describe('updateBoard', () => {
+      let mockRequest: Partial<Request>;
+      let mockResponse: Partial<Response>;
+      let mockNext: NextFunction;
+
+      beforeEach(() => {
+        mockResponse = {
+          status: jest.fn().mockReturnThis(),
+          json: jest.fn(),
+        };
+        mockNext = jest.fn();
+        jest.clearAllMocks();
+      });
+
+      it('should update and populate a board successfully', async () => {
+        const boardId = new mongoose.Types.ObjectId().toString();
+        const updateData = { title: 'Updated Board', description: 'Updated desc', members: [] };
+        
+        const mockSavedBoard = { _id: boardId, ...updateData };
+        const mockPopulatedBoard = {
+          ...mockSavedBoard,
+          owner: { _id: new mongoose.Types.ObjectId(), username: 'owner', email: 'owner@example.com' },
+          members: [],
+        };
+
+        mockRequest = { params: { boardId }, body: updateData };
+
+        // 1. Create a mock populate function to track calls directly on this document instance
+        const mockPopulateMethod = jest.fn().mockResolvedValue(mockPopulatedBoard);
+
+        const mockMongooseDoc = {
+          ...mockSavedBoard,
+          populate: mockPopulateMethod, // Injects the spy directly on the returned object
+        };
+
+        // 2. Resolve findByIdAndUpdate with our customized mock document
+        const updateSpy = jest.spyOn(Board, 'findByIdAndUpdate').mockResolvedValue(mockMongooseDoc as any);
+
+        // Act
+        await updateBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+        // Assert
+        expect(updateSpy).toHaveBeenCalledWith(boardId, updateData, { new: true });
+        
+        // 3. Assert directly against the method attached to the document object
+        expect(mockPopulateMethod).toHaveBeenCalledWith([
+          { path: 'owner', select: 'username email' },
+          { path: 'members', select: 'username email' }
+        ]);
+        
+        expect(mockResponse.status).toHaveBeenCalledWith(200);
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          success: true,
+          data: mockPopulatedBoard,
+        });
+
+        updateSpy.mockRestore();
+      });
+    });
+
+    describe('createBoard', () => {
+      let mockRequest: Partial<Request>;
+      let mockResponse: Partial<Response>;
+      let mockNext: NextFunction;
+
+      beforeEach(() => {
+        mockResponse = {
+          status: jest.fn().mockReturnThis(),
+          json: jest.fn(),
+        };
+        mockNext = jest.fn();
+        jest.clearAllMocks();
+      });
+
+      it('should create and populate a board successfully', async () => {
+        const ownerId = new mongoose.Types.ObjectId();
+        
+        const createData = { 
+          title: 'New Board', 
+          description: 'Test board description',
+          owner: ownerId,
+          members: []
+        };
+
+        const mockPopulatedBoard = {
+          _id: new mongoose.Types.ObjectId(),
+          ...createData,
+          owner: { _id: ownerId, username: 'owner', email: 'owner@example.com' },
+          members: [],
+        };
+
+        mockRequest = { body: createData };
+        const createSpy = jest.spyOn(Board, 'create').mockResolvedValue([mockPopulatedBoard] as any);
+
+        // Act
+        await createBoard(mockRequest as Request, mockResponse as Response, mockNext);
+        expect(createSpy).toHaveBeenCalledWith(
+          [
+            {
+              title: 'New Board',
+              description: 'Test board description',
+              owner: ownerId,
+              members: []
+            }
+          ],
+          { populate: ['owner', 'members'] }
+        );
+
+        expect(mockResponse.status).toHaveBeenCalledWith(201);
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          success: true,
+          data: mockPopulatedBoard,
+        });
+        
+        expect(mockNext).not.toHaveBeenCalled();
+
+        // Clean up spy
+        createSpy.mockRestore();
+      });
+
+      it('should handle errors and pass to next middleware', async () => {
+        const createData = { 
+          title: 'New Board', 
+          owner: new mongoose.Types.ObjectId() 
+        };
+        const error = new Error('Database error');
+        mockRequest = { body: createData };
+
+        // FIX 1: Use jest.spyOn to match the mocking strategy of the success test
+        const createSpy = jest.spyOn(Board, 'create').mockRejectedValue(error);
+
+        await createBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+        expect(mockNext).toHaveBeenCalledWith(error);
+        
+        // Clean up spy
+        createSpy.mockRestore();
+      });
+
+      it('should return 400 if required fields are missing', async () => {
+        const createData = { title: '' }; // Missing owner field
+        mockRequest = { body: createData };
+
+        await createBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+        expect(mockResponse.status).toHaveBeenCalledWith(400);
+        // FIX 2: Update the key to 'error' and the text to match your controller's exact string
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          success: false,
+          error: 'Title and owner are required',
+        });
+        
+        expect(mockNext).not.toHaveBeenCalled();
+      });
+    });
 });
