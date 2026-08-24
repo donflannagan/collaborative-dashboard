@@ -1,24 +1,43 @@
-import { Request, Response, NextFunction } from 'express';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { getTasksByBoard } from '../../controllers/taskController';
 import { Task } from '../../models/Task';
 
-// Mock the Task model
-jest.mock('../../models/Task');
+// 1. Explicitly mock the Task model natively
+vi.mock('../../models/Task', () => {
+  return {
+    Task: {
+      find: vi.fn()
+    }
+  };
+});
 
 describe('Task Controller', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let mockNext: NextFunction;
 
+  // Reusable helper to quickly mock the Mongoose query chain structure
+  const createMockQueryChain = (resolvedValue: any, spies: Record<string, any> = {}) => {
+    const sortSpy = spies.sort || vi.fn().mockResolvedValue(resolvedValue);
+    const populate2Spy = spies.populate2 || vi.fn().mockReturnValue({ sort: sortSpy });
+    const populate1Spy = spies.populate1 || vi.fn().mockReturnValue({ populate: populate2Spy });
+    
+    return {
+      chain: { populate: populate1Spy },
+      spies: { populate1: populate1Spy, populate2: populate2Spy, sort: sortSpy }
+    };
+  };
+
   beforeEach(() => {
     mockRequest = {};
     mockResponse = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
     };
-    mockNext = jest.fn();
-    jest.clearAllMocks();
+    mockNext = vi.fn();
+    vi.clearAllMocks();
   });
 
   describe('getTasksByBoard', () => {
@@ -48,14 +67,9 @@ describe('Task Controller', () => {
       ];
 
       mockRequest = { params: { boardId } };
-
-      (Task.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            sort: jest.fn().mockResolvedValue(mockTasks),
-          }),
-        }),
-      });
+      
+      const { chain } = createMockQueryChain(mockTasks);
+      vi.mocked(Task.find).mockReturnValue(chain as any);
 
       await getTasksByBoard(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -70,16 +84,10 @@ describe('Task Controller', () => {
 
     it('should return empty array if board has no tasks', async () => {
       const boardId = new mongoose.Types.ObjectId().toString();
-
       mockRequest = { params: { boardId } };
-
-      (Task.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            sort: jest.fn().mockResolvedValue([]),
-          }),
-        }),
-      });
+      
+      const { chain } = createMockQueryChain([]);
+      vi.mocked(Task.find).mockReturnValue(chain as any);
 
       await getTasksByBoard(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -93,7 +101,7 @@ describe('Task Controller', () => {
 
     it('should return 400 if boardId is missing', async () => {
       mockRequest = { params: {} };
-
+      
       await getTasksByBoard(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
@@ -105,61 +113,47 @@ describe('Task Controller', () => {
 
     it('should populate assignee and createdBy fields', async () => {
       const boardId = new mongoose.Types.ObjectId().toString();
-
       mockRequest = { params: { boardId } };
-
-      const mockPopulate1 = jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          sort: jest.fn().mockResolvedValue([]),
-        }),
-      });
-
-      const mockPopulate2 = jest.fn().mockReturnValue({
-        populate: mockPopulate1,
-      });
-
-      (Task.find as jest.Mock).mockReturnValue({
-        populate: mockPopulate2,
-      });
+      
+      const spies = {
+        populate1: vi.fn(),
+        populate2: vi.fn(),
+        sort: vi.fn().mockResolvedValue([])
+      };
+      
+      // Wire up the mock chain manually to assert against the specific spies
+      spies.populate1.mockReturnValue({ populate: spies.populate2 });
+      spies.populate2.mockReturnValue({ sort: spies.sort });
+      
+      vi.mocked(Task.find).mockReturnValue({ populate: spies.populate1 } as any);
 
       await getTasksByBoard(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockPopulate2).toHaveBeenCalledWith('assignee', 'username email');
-      expect(mockPopulate1).toHaveBeenCalledWith('createdBy', 'username email');
+      expect(spies.populate1).toHaveBeenCalledWith('assignee', 'username email');
+      expect(spies.populate2).toHaveBeenCalledWith('createdBy', 'username email');
     });
 
     it('should sort tasks by columnId and position', async () => {
       const boardId = new mongoose.Types.ObjectId().toString();
-      const mockSort = jest.fn().mockResolvedValue([]);
-
       mockRequest = { params: { boardId } };
-
-      (Task.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            sort: mockSort,
-          }),
-        }),
-      });
+      
+      const sortSpy = vi.fn().mockResolvedValue([]);
+      const { chain } = createMockQueryChain([], { sort: sortSpy });
+      vi.mocked(Task.find).mockReturnValue(chain as any);
 
       await getTasksByBoard(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockSort).toHaveBeenCalledWith({ columnId: 1, position: 1 });
+      expect(sortSpy).toHaveBeenCalledWith({ columnId: 1, position: 1 });
     });
 
     it('should handle database errors and pass to next middleware', async () => {
       const boardId = new mongoose.Types.ObjectId().toString();
       const error = new Error('Database connection failed');
-
       mockRequest = { params: { boardId } };
-
-      (Task.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            sort: jest.fn().mockRejectedValue(error),
-          }),
-        }),
-      });
+      
+      const sortSpy = vi.fn().mockRejectedValue(error);
+      const { chain } = createMockQueryChain([], { sort: sortSpy });
+      vi.mocked(Task.find).mockReturnValue(chain as any);
 
       await getTasksByBoard(mockRequest as Request, mockResponse as Response, mockNext);
 
