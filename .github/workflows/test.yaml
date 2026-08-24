@@ -1,0 +1,51 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: 
+      - main
+      - master
+      - develop
+      - 'feat/**' 
+  pull_request:
+    branches: 
+      - main
+      - master
+      - develop
+      - 'feat/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend-node
+
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          # Cache line is cleanly removed!
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Debug Package JSON
+        run: cat package.json
+
+      - name: Run Vitest Suite with Coverage
+        run: npm run test:coverage
+        env:
+          MONGO_URL: mongodb://localhost:27017/test_db
+          NODE_ENV: test

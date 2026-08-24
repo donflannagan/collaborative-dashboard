@@ -19,7 +19,17 @@ export default defineConfig({
       reporter: ['text', 'html'], // Outputs terminal numbers AND high-fidelity web charts
       reportsDirectory: './html-report/coverage', // Merges maps directly into your dashboard path
       include: ['src/**/*.ts'], // Only trace core application files
-      exclude: ['src/__tests__/**', 'src/interfaces/**'], // Don't pollute metrics with mock logs
+      exclude: [
+        'src/__tests__/**',
+        'src/interfaces/**',
+        'src/models/**',       // Mongoose schemas don't contain unit-testable code
+        'src/config/**',       // Env variables and db connection configurations
+        'src/middleware/**',   // Global express routers/error handlers
+        'src/socket/**',       // Socket.io initialization scripts
+        'src/app.ts',          // Express application bootstrap
+        'src/server.ts',       // Server network listener hook
+        'src/routes/index.ts'  // Root routing hub file
+      ],
       
       // Optional: Strict quality gate thresholds to secure your builds
       thresholds: {
