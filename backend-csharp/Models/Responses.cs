@@ -4,6 +4,7 @@ public sealed record UserSummary(string _id,
     string Username, 
     string Email
 );
+
 public sealed record BoardResponse(string _id, 
     string Title, 
     string? Description, 
@@ -13,6 +14,7 @@ public sealed record BoardResponse(string _id,
     DateTime CreatedAt, 
     DateTime UpdatedAt
 );
+
 public sealed record TaskResponse(
     string _id, 
     string Title, 
@@ -28,6 +30,7 @@ public sealed record TaskResponse(
     DateTime CreatedAt, 
     DateTime UpdatedAt
 );
+
 public sealed record ApiResponse<T>(
     bool Success, 
     IReadOnlyList<T> Data, 
