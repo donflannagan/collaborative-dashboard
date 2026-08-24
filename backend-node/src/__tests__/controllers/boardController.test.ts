@@ -1,25 +1,47 @@
-import { Request, Response, NextFunction } from 'express';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { getAllBoards, getBoardsByUser, deleteBoard, createBoard, updateBoard } from '../../controllers/boardController';
+import { 
+  getAllBoards, 
+  getBoardsByUser, 
+  deleteBoard, 
+  createBoard, 
+  updateBoard 
+} from '../../controllers/boardController';
 import { Board } from '../../models/Board';
-import { User } from '../../models/User';
 
-// Mock the Board model
-jest.mock('../../models/Board');
+// 1. Explicitly mock the Board model methods up front
+vi.mock('../../models/Board', () => {
+  return {
+    Board: {
+      find: vi.fn(),
+      findByIdAndDelete: vi.fn(),
+      findByIdAndUpdate: vi.fn(),
+      create: vi.fn(),
+    }
+  };
+});
 
 describe('Board Controller', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let mockNext: NextFunction;
 
+  // Helper utility to mimic Mongoose's find().populate().populate() chain
+  const createMockFindChain = (resolvedValue: any) => {
+    const populate2 = vi.fn().mockResolvedValue(resolvedValue);
+    const populate1 = vi.fn().mockReturnValue({ populate: populate2 });
+    return { populate: populate1 };
+  };
+
   beforeEach(() => {
     mockRequest = {};
     mockResponse = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
     };
-    mockNext = jest.fn();
-    jest.clearAllMocks();
+    mockNext = vi.fn();
+    vi.clearAllMocks();
   });
 
   describe('getAllBoards', () => {
@@ -41,11 +63,7 @@ describe('Board Controller', () => {
         },
       ];
 
-      (Board.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue(mockBoards),
-        }),
-      });
+      vi.mocked(Board.find).mockReturnValue(createMockFindChain(mockBoards) as any);
 
       await getAllBoards(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -59,12 +77,9 @@ describe('Board Controller', () => {
 
     it('should handle errors and pass to next middleware', async () => {
       const error = new Error('Database connection failed');
-
-      (Board.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockRejectedValue(error),
-        }),
-      });
+      const populate2 = vi.fn().mockRejectedValue(error);
+      const populate1 = vi.fn().mockReturnValue({ populate: populate2 });
+      vi.mocked(Board.find).mockReturnValue({ populate: populate1 } as any);
 
       await getAllBoards(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -72,11 +87,7 @@ describe('Board Controller', () => {
     });
 
     it('should return empty array if no boards exist', async () => {
-      (Board.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue([]),
-        }),
-      });
+      vi.mocked(Board.find).mockReturnValue(createMockFindChain([]) as any);
 
       await getAllBoards(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -101,14 +112,8 @@ describe('Board Controller', () => {
           columns: ['To Do', 'In Progress', 'Done'],
         },
       ];
-
       mockRequest = { params: { userId } };
-
-      (Board.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue(mockBoards),
-        }),
-      });
+      vi.mocked(Board.find).mockReturnValue(createMockFindChain(mockBoards) as any);
 
       await getBoardsByUser(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -125,7 +130,7 @@ describe('Board Controller', () => {
 
     it('should return 400 if userId is missing', async () => {
       mockRequest = { params: {} };
-
+      
       await getBoardsByUser(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
@@ -146,14 +151,8 @@ describe('Board Controller', () => {
           columns: ['To Do', 'In Progress', 'Done'],
         },
       ];
-
       mockRequest = { params: { userId } };
-
-      (Board.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue(mockBoards),
-        }),
-      });
+      vi.mocked(Board.find).mockReturnValue(createMockFindChain(mockBoards) as any);
 
       await getBoardsByUser(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -166,14 +165,11 @@ describe('Board Controller', () => {
     it('should handle errors and pass to next middleware', async () => {
       const userId = new mongoose.Types.ObjectId().toString();
       const error = new Error('Database error');
-
       mockRequest = { params: { userId } };
-
-      (Board.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockRejectedValue(error),
-        }),
-      });
+      
+      const populate2 = vi.fn().mockRejectedValue(error);
+      const populate1 = vi.fn().mockReturnValue({ populate: populate2 });
+      vi.mocked(Board.find).mockReturnValue({ populate: populate1 } as any);
 
       await getBoardsByUser(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -191,10 +187,8 @@ describe('Board Controller', () => {
         members: [],
         columns: ['To Do', 'In Progress', 'Done'],
       };
-
       mockRequest = { params: { boardId } };
-
-      (Board.findByIdAndDelete as jest.Mock).mockResolvedValue(mockBoard);
+      vi.mocked(Board.findByIdAndDelete).mockResolvedValue(mockBoard);
 
       await deleteBoard(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -205,173 +199,99 @@ describe('Board Controller', () => {
         data: mockBoard,
       });
     });
+
     it('should handle errors and pass to next middleware', async () => {
       const boardId = new mongoose.Types.ObjectId().toString();
       const error = new Error('Database error');
-
       mockRequest = { params: { boardId } };
-
-      (Board.findByIdAndDelete as jest.Mock).mockRejectedValue(error);
+      vi.mocked(Board.findByIdAndDelete).mockRejectedValue(error);
 
       await deleteBoard(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(error);
     });
   });
-  
-    describe('updateBoard', () => {
-      let mockRequest: Partial<Request>;
-      let mockResponse: Partial<Response>;
-      let mockNext: NextFunction;
 
-      beforeEach(() => {
-        mockResponse = {
-          status: jest.fn().mockReturnThis(),
-          json: jest.fn(),
-        };
-        mockNext = jest.fn();
-        jest.clearAllMocks();
-      });
+  describe('updateBoard', () => {
+    it('should update and populate a board successfully', async () => {
+      const boardId = new mongoose.Types.ObjectId().toString();
+      const updateData = { title: 'Updated Board', description: 'Updated desc', members: [] };
+      const mockSavedBoard = { _id: boardId, ...updateData };
+      const mockPopulatedBoard = {
+        ...mockSavedBoard,
+        owner: { _id: new mongoose.Types.ObjectId(), username: 'owner', email: 'owner@example.com' },
+        members: [],
+      };
+      mockRequest = { params: { boardId }, body: updateData };
 
-      it('should update and populate a board successfully', async () => {
-        const boardId = new mongoose.Types.ObjectId().toString();
-        const updateData = { title: 'Updated Board', description: 'Updated desc', members: [] };
-        
-        const mockSavedBoard = { _id: boardId, ...updateData };
-        const mockPopulatedBoard = {
-          ...mockSavedBoard,
-          owner: { _id: new mongoose.Types.ObjectId(), username: 'owner', email: 'owner@example.com' },
-          members: [],
-        };
+      const mockPopulateMethod = vi.fn().mockResolvedValue(mockPopulatedBoard);
+      const mockMongooseDoc = { ...mockSavedBoard, populate: mockPopulateMethod };
 
-        mockRequest = { params: { boardId }, body: updateData };
+      vi.mocked(Board.findByIdAndUpdate).mockResolvedValue(mockMongooseDoc as any);
 
-        // 1. Create a mock populate function to track calls directly on this document instance
-        const mockPopulateMethod = jest.fn().mockResolvedValue(mockPopulatedBoard);
+      await updateBoard(mockRequest as Request, mockResponse as Response, mockNext);
 
-        const mockMongooseDoc = {
-          ...mockSavedBoard,
-          populate: mockPopulateMethod, // Injects the spy directly on the returned object
-        };
-
-        // 2. Resolve findByIdAndUpdate with our customized mock document
-        const updateSpy = jest.spyOn(Board, 'findByIdAndUpdate').mockResolvedValue(mockMongooseDoc as any);
-
-        // Act
-        await updateBoard(mockRequest as Request, mockResponse as Response, mockNext);
-
-        // Assert
-        expect(updateSpy).toHaveBeenCalledWith(boardId, updateData, { new: true });
-        
-        // 3. Assert directly against the method attached to the document object
-        expect(mockPopulateMethod).toHaveBeenCalledWith([
-          { path: 'owner', select: 'username email' },
-          { path: 'members', select: 'username email' }
-        ]);
-        
-        expect(mockResponse.status).toHaveBeenCalledWith(200);
-        expect(mockResponse.json).toHaveBeenCalledWith({
-          success: true,
-          data: mockPopulatedBoard,
-        });
-
-        updateSpy.mockRestore();
+      expect(Board.findByIdAndUpdate).toHaveBeenCalledWith(boardId, updateData, { new: true });
+      expect(mockPopulateMethod).toHaveBeenCalledWith([
+        { path: 'owner', select: 'username email' },
+        { path: 'members', select: 'username email' }
+      ]);
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockPopulatedBoard,
       });
     });
+  });
 
-    describe('createBoard', () => {
-      let mockRequest: Partial<Request>;
-      let mockResponse: Partial<Response>;
-      let mockNext: NextFunction;
+  describe('createBoard', () => {
+    it('should create and populate a board successfully', async () => {
+      const ownerId = new mongoose.Types.ObjectId();
+      const createData = { title: 'New Board', description: 'Test board description', owner: ownerId, members: [] };
+      const mockPopulatedBoard = {
+        _id: new mongoose.Types.ObjectId(),
+        ...createData,
+        owner: { _id: ownerId, username: 'owner', email: 'owner@example.com' },
+        members: [],
+      };
+      mockRequest = { body: createData };
+      vi.mocked(Board.create).mockResolvedValue([mockPopulatedBoard] as any);
 
-      beforeEach(() => {
-        mockResponse = {
-          status: jest.fn().mockReturnThis(),
-          json: jest.fn(),
-        };
-        mockNext = jest.fn();
-        jest.clearAllMocks();
+      await createBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(Board.create).toHaveBeenCalledWith(
+        [
+          { title: 'New Board', description: 'Test board description', owner: ownerId, members: [] }
+        ],
+        { populate: ['owner', 'members'] }
+      );
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockPopulatedBoard,
       });
-
-      it('should create and populate a board successfully', async () => {
-        const ownerId = new mongoose.Types.ObjectId();
-        
-        const createData = { 
-          title: 'New Board', 
-          description: 'Test board description',
-          owner: ownerId,
-          members: []
-        };
-
-        const mockPopulatedBoard = {
-          _id: new mongoose.Types.ObjectId(),
-          ...createData,
-          owner: { _id: ownerId, username: 'owner', email: 'owner@example.com' },
-          members: [],
-        };
-
-        mockRequest = { body: createData };
-        const createSpy = jest.spyOn(Board, 'create').mockResolvedValue([mockPopulatedBoard] as any);
-
-        // Act
-        await createBoard(mockRequest as Request, mockResponse as Response, mockNext);
-        expect(createSpy).toHaveBeenCalledWith(
-          [
-            {
-              title: 'New Board',
-              description: 'Test board description',
-              owner: ownerId,
-              members: []
-            }
-          ],
-          { populate: ['owner', 'members'] }
-        );
-
-        expect(mockResponse.status).toHaveBeenCalledWith(201);
-        expect(mockResponse.json).toHaveBeenCalledWith({
-          success: true,
-          data: mockPopulatedBoard,
-        });
-        
-        expect(mockNext).not.toHaveBeenCalled();
-
-        // Clean up spy
-        createSpy.mockRestore();
-      });
-
-      it('should handle errors and pass to next middleware', async () => {
-        const createData = { 
-          title: 'New Board', 
-          owner: new mongoose.Types.ObjectId() 
-        };
-        const error = new Error('Database error');
-        mockRequest = { body: createData };
-
-        // FIX 1: Use jest.spyOn to match the mocking strategy of the success test
-        const createSpy = jest.spyOn(Board, 'create').mockRejectedValue(error);
-
-        await createBoard(mockRequest as Request, mockResponse as Response, mockNext);
-
-        expect(mockNext).toHaveBeenCalledWith(error);
-        
-        // Clean up spy
-        createSpy.mockRestore();
-      });
-
-      it('should return 400 if required fields are missing', async () => {
-        const createData = { title: '' }; // Missing owner field
-        mockRequest = { body: createData };
-
-        await createBoard(mockRequest as Request, mockResponse as Response, mockNext);
-
-        expect(mockResponse.status).toHaveBeenCalledWith(400);
-        // FIX 2: Update the key to 'error' and the text to match your controller's exact string
-        expect(mockResponse.json).toHaveBeenCalledWith({
-          success: false,
-          error: 'Title and owner are required',
-        });
-        
-        expect(mockNext).not.toHaveBeenCalled();
-      });
+      expect(mockNext).not.toHaveBeenCalled();
     });
+    
+    it('should handle errors and pass to next middleware', async () => {
+      const createData = { title: 'New Board', owner: new mongoose.Types.ObjectId() };
+      const error = new Error('Database error');
+      mockRequest = { body: createData };
+      vi.mocked(Board.create).mockRejectedValue(error);
+      await createBoard(mockRequest as Request, mockResponse as Response, mockNext);
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+
+    it('should return 400 if required fields are missing', async () => {
+      const createData = { title: '' };
+      mockRequest = { body: createData };
+      await createBoard(mockRequest as Request, mockResponse as Response, mockNext);
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Title and owner are required',
+      });
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+  });
 });

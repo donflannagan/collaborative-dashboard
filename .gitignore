@@ -7,6 +7,9 @@
 node_modules/
 package-lock.json
 yarn.lock
+html-report/
+coverage/
+.vite/
 
 # Build outputs
 dist/
