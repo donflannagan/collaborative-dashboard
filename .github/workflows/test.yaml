@@ -18,6 +18,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./backend-node
+
     services:
       mongodb:
         image: mongo:6.0
