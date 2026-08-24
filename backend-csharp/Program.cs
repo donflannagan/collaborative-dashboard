@@ -17,6 +17,7 @@ builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<BoardService>();
 builder.Services.AddScoped<TaskService>();
 builder.Services.AddScoped<HealthService>();
+builder.Services.AddScoped<UsersService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -27,6 +28,10 @@ app.MapErrors();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapControllers();
+
+//Console.WriteLine("Application is starting...");
+//Console.WriteLine("DB connection string {0}", Environment.GetEnvironmentVariable("MONGODB_URI") ?? builder.Configuration["MongoDb:ConnectionString"]);
+
 
 app.Run();
 

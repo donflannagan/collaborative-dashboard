@@ -98,4 +98,64 @@ public sealed class UsersControllerTests
         Assert.Equal(email, response.Data[0].Email);
         Assert.Equal(1, response.Count);
     }
+
+    [Fact]
+    public async Task UpdateUserByUserIdReturnsUserSummary()
+    {
+        var userId = "user-1";
+        var username = "testuser";
+        var email = "testuser@example.com";
+        var userSummary = new UserSummary(userId, username, email);
+        userService.Setup(service => service.UpdateUserByUserId(userSummary, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiResponse<UserSummary>(true, new[] { userSummary }.ToList(), 1));
+
+        var response = await controller.UpdateUserByUserId(userSummary, CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Single(response.Data);
+        Assert.Equal(userId, response.Data[0]._id);
+        Assert.Equal(username, response.Data[0].Username);
+        Assert.Equal(email, response.Data[0].Email);
+        Assert.Equal(1, response.Count);
+    }
+
+    [Fact]
+    public async Task DeleteUserByIdReturnsUserSummary()
+    {
+        var userId = "user-1";
+        var username = "testuser";
+        var email = "testuser@example.com";
+        var userSummary = new UserSummary(userId, username, email);
+        userService.Setup(service => service.DeleteUserByIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiResponse<UserSummary>(true, new[] { userSummary }.ToList(), 1));
+
+        var response = await controller.DeleteUserById(userId, CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Single(response.Data);
+        Assert.Equal(userId, response.Data[0]._id);
+        Assert.Equal(username, response.Data[0].Username);
+        Assert.Equal(email, response.Data[0].Email);
+        Assert.Equal(1, response.Count);
+    }
+
+    [Fact]
+    public async Task CreateUserReturnsUserSummary()
+    {
+        var userId = "user-1";
+        var username = "testuser";
+        var email = "testuser@example.com";
+        var userSummary = new UserSummary(userId, username, email);
+        userService.Setup(service => service.CreateUserAsync(userSummary, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiResponse<UserSummary>(true, new[] { userSummary }.ToList(), 1));
+
+        var response = await controller.CreateUser(userSummary, CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Single(response.Data);
+        Assert.Equal(userId, response.Data[0]._id);
+        Assert.Equal(username, response.Data[0].Username);
+        Assert.Equal(email, response.Data[0].Email);
+        Assert.Equal(1, response.Count);
+    }
 }
