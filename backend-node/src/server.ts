@@ -10,6 +10,7 @@ import { connectDB } from './config/database';
 import boardRoutes from './routes/boardRoutes';
 import taskRoutes from './routes/taskRoutes';
 import healthRouter from './routes/healthRoutes';
+import userRouter from './routes/usersRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -34,6 +35,7 @@ app.use(express.json());
 app.use('/api/health', healthRouter);
 app.use('/api/boards', boardRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/users', userRouter);
 
 registerSocketEvents(io);
 

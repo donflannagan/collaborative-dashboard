@@ -52,7 +52,7 @@ app.get('/', (req: Request, res: Response) => {
         'Node.js Backend': '/api/node/*',
         'FastAPI Backend': '/api/fastapi/*',
         'Java Backend': '/api/java/*',
-        'C# Backend': '/api/csharp/*',
+        '.NET Backend': '/api/csharp/*',
       },
       examples: {
         getAllBoards: {
@@ -65,6 +65,43 @@ app.get('/', (req: Request, res: Response) => {
           node: 'GET /api/node/tasks/board/:boardId',
           fastapi: 'GET /api/fastapi/tasks/board/:boardId',
           java: 'GET /api/java/tasks/board/:boardId',
+        },
+        users: {
+          getAll: {
+            node: 'GET /api/node/users',
+            dotnet: 'GET /api/csharp/users',
+            java: 'GET /api/java/users',
+          },
+          getById: {
+            node: 'GET /api/node/users/by-userId/:userId',
+            dotnet: 'GET /api/csharp/users/by-userId/:userId',
+            java: 'GET /api/java/users/by-userId/:userId',
+          },
+          getByUsername: {
+            node: 'GET /api/node/users/by-username/:username',
+            dotnet: 'GET /api/csharp/users/by-username/:username',
+            java: 'GET /api/java/users/by-username/:username',
+          },
+          getByEmail: {
+            node: 'GET /api/node/users/by-email/:email',
+            dotnet: 'GET /api/csharp/users/by-email/:email',
+            java: 'GET /api/java/users/by-email/:email',
+          },
+          create: {
+            node: 'POST /api/node/users',
+            dotnet: 'POST /api/csharp/users',
+            java: 'POST /api/java/users',
+          },
+          update: {
+            node: 'PUT /api/node/users/update/:userId',
+            dotnet: 'PUT /api/csharp/users/update/:userId',
+            java: 'PUT /api/java/users/update/:userId',
+          },
+          delete: {
+            node: 'DELETE /api/node/users/delete/:userId',
+            dotnet: 'DELETE /api/csharp/users/delete/:userId',
+            java: 'DELETE /api/java/users/delete/:userId',
+          },
         },
       },
     },

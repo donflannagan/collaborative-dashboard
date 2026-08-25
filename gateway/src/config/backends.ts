@@ -14,13 +14,13 @@ export const backends: BackendConfig[] = [
     port: 5000,
     forwardPrefix: '/api',
   },
-  {
-    name: 'FastAPI Backend',
-    prefix: '/api/fastapi',
-    target: `http://${process.env.FASTAPI_BACKEND_HOST || 'localhost'}:${process.env.FASTAPI_BACKEND_PORT || '5001'}`,
-    port: 5001,
-    forwardPrefix: '',
-  },
+  //{
+  //  name: 'FastAPI Backend',
+  //  prefix: '/api/fastapi',
+  //  target: `http://${process.env.FASTAPI_BACKEND_HOST || 'localhost'}:${process.env.FASTAPI_BACKEND_PORT || '5001'}`,
+  //  port: 5001,
+  //  forwardPrefix: '',
+  //},
   {
     name: 'Java Backend',
     prefix: '/api/java',
