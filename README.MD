@@ -27,7 +27,7 @@ MongoDB :27017
 | Node API | 5000 | `backend-node/` | Express, Mongoose, Socket.io |
 | FastAPI | 5001 | `backend-fastapi/` | FastAPI, Motor, Pydantic |
 | Java API | 5002 | `backend-java/` | Spring Boot, Spring Data MongoDB |
-| C# API | 5003 | `backend-csharp/` | ASP.NET Core, MongoDB.Driver |
+| .NET API | 5003 | `backend-csharp/` | ASP.NET Core, MongoDB.Driver |
 | MongoDB | 27017 | Docker volume | Shared database |
 
 ## Quick Start with Docker
@@ -77,7 +77,7 @@ The gateway uses the first path segment after `/api` to select a backend:
 | `/api/node` | Node API on port 5000 |
 | `/api/fastapi` | FastAPI on port 5001 |
 | `/api/java` | Java API on port 5002 |
-| `/api/csharp` | C# API on port 5003 |
+| `/api/csharp` | .NET API on port 5003 |
 
 Examples:
 
@@ -92,7 +92,7 @@ The gateway removes the public backend prefix before forwarding. It then applies
 
 ## API Endpoints
 
-All three backends expose the same read endpoints through the gateway.
+The backends expose their endpoints through the gateway using backend-specific prefixes.
 
 ### Boards
 
@@ -118,9 +118,9 @@ The Java service exposes the same routes through the gateway:
 | GET | `/api/java/boards/user/:userId` | Get boards owned by or shared with a user |
 | GET | `/api/java/tasks/board/:boardId` | Get a board's tasks sorted by column and position |
 
-### C# Backend
+### .NET Backend
 
-The ASP.NET Core service exposes the same routes through the gateway:
+The ASP.NET Core service exposes these routes through the gateway:
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
@@ -128,6 +128,20 @@ The ASP.NET Core service exposes the same routes through the gateway:
 | GET | `/api/csharp/boards` | Get all boards |
 | GET | `/api/csharp/boards/user/:userId` | Get boards owned by or shared with a user |
 | GET | `/api/csharp/tasks/board/:boardId` | Get a board's tasks sorted by column and position |
+
+### Users
+
+Node.js, .NET, and Java expose the same user endpoints through the gateway:
+
+| Method | Node path | .NET path | Java path | Description |
+| --- | --- | --- | --- | --- |
+| GET | `/api/node/users` | `/api/csharp/users` | `/api/java/users` | Get all users |
+| GET | `/api/node/users/by-userId/:userId` | `/api/csharp/users/by-userId/:userId` | `/api/java/users/by-userId/:userId` | Get a user by ID |
+| GET | `/api/node/users/by-username/:username` | `/api/csharp/users/by-username/:username` | `/api/java/users/by-username/:username` | Get a user by username |
+| GET | `/api/node/users/by-email/:email` | `/api/csharp/users/by-email/:email` | `/api/java/users/by-email/:email` | Get a user by email |
+| POST | `/api/node/users` | `/api/csharp/users` | `/api/java/users` | Create a user |
+| PUT | `/api/node/users/update/:userId` | `/api/csharp/users/update/:userId` | `/api/java/users/update/:userId` | Update a user |
+| DELETE | `/api/node/users/delete/:userId` | `/api/csharp/users/delete/:userId` | `/api/java/users/delete/:userId` | Delete a user |
 
 Successful list responses use this shape:
 
@@ -221,7 +235,7 @@ cd backend-java
 mvn test
 ```
 
-### C# API Tests
+### .NET API Tests
 
 The C# test project uses xUnit, Moq, and ASP.NET TestHost. It covers health, board, task, empty-result, and service-parameter behavior:
 

@@ -30,7 +30,7 @@ app.UseSwaggerUI();
 app.MapControllers();
 
 //Console.WriteLine("Application is starting...");
-//Console.WriteLine("DB connection string {0}", Environment.GetEnvironmentVariable("MONGODB_URI") ?? builder.Configuration["MongoDb:ConnectionString"]);
+Console.WriteLine("DB connection string {0}", builder.Configuration["MongoDb:ConnectionString"]);
 
 
 app.Run();
