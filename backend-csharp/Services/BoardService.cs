@@ -69,5 +69,5 @@ public class BoardService
         return new ApiResponse<BoardResponse>(true, data, data.Count);
     }
 
-    private static UserSummary Summary(UserDocument user) => new(user.Id, user.Username, user.Email);
+    private static UserSummary Summary(UserDocument user) => new(user.Id, user.Username, user.Email, user.Password);
 }

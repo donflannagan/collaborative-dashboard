@@ -29,10 +29,6 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.MapControllers();
 
-//Console.WriteLine("Application is starting...");
-Console.WriteLine("DB connection string {0}", builder.Configuration["MongoDb:ConnectionString"]);
-
-
 app.Run();
 
 public partial class Program { }

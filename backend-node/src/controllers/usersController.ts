@@ -83,14 +83,14 @@ export async function getAllUsers(req: Request, res: Response, next: NextFunctio
 
 export async function createUser(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { email, username } = req.body;
+    const { email, username, password } = req.body;
 
-    if (!email || !username) {
-      res.status(400).json({ success: false, error: 'Email and username are required' });
+    if (!email || !username || !password) {
+      res.status(400).json({ success: false, error: 'Email, username, and password are required' });
       return;
     }
 
-    const user = await User.create({ email, username });
+    const user = await User.create({ email, username, password });
     res.status(201).json(userResponse(user));
   } catch (error) {
     next(error);

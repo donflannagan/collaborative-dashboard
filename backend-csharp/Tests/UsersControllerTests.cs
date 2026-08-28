@@ -25,7 +25,7 @@ public sealed class UsersControllerTests
         var userId = "user-1";
         var username = "testuser";
         var email = "testuser@example.com";
-        var userSummary = new UserSummary(userId, username, email);
+        var userSummary = new UserSummary(userId, username, email, "");
         userService.Setup(service => service.GetUserByIdAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<UserSummary>(true, new[] { userSummary }.ToList(), 1));
 
@@ -45,7 +45,7 @@ public sealed class UsersControllerTests
         var userId = "user-1";
         var username = "testuser";
         var email = "testuser@example.com";
-        var userSummary = new UserSummary(userId, username, email);
+        var userSummary = new UserSummary(userId, username, email, "");
         userService.Setup(service => service.GetUserByUsernameAsync(username, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<UserSummary>(true, new[] { userSummary }.ToList(), 1));
 
@@ -65,7 +65,7 @@ public sealed class UsersControllerTests
         var userId = "user-1";
         var username = "testuser";
         var email = "testuser@example.com";
-        var userSummary = new UserSummary(userId, username, email);
+        var userSummary = new UserSummary(userId, username, email, "");
         userService.Setup(service => service.GetUserByEmailAsync(email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<UserSummary>(true, new[] { userSummary }.ToList(), 1));
 
@@ -85,7 +85,7 @@ public sealed class UsersControllerTests
         var userId = "user-1";
         var username = "testuser";
         var email = "testuser@example.com";
-        var userSummary = new UserSummary(userId, username, email);
+        var userSummary = new UserSummary(userId, username, email, "");
         userService.Setup(service => service.GetAllUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<UserSummary>(true, new[] { userSummary }.ToList(), 1));
 
@@ -105,7 +105,8 @@ public sealed class UsersControllerTests
         var userId = "user-1";
         var username = "testuser";
         var email = "testuser@example.com";
-        var userSummary = new UserSummary(userId, username, email);
+        var password = "password123";
+        var userSummary = new UserSummary(userId, username, email, password);
         userService.Setup(service => service.UpdateUserByUserId(userSummary, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<UserSummary>(true, new[] { userSummary }.ToList(), 1));
 
@@ -125,7 +126,7 @@ public sealed class UsersControllerTests
         var userId = "user-1";
         var username = "testuser";
         var email = "testuser@example.com";
-        var userSummary = new UserSummary(userId, username, email);
+        var userSummary = new UserSummary(userId, username, email, "");
         userService.Setup(service => service.DeleteUserByIdAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<UserSummary>(true, new[] { userSummary }.ToList(), 1));
 
@@ -145,7 +146,8 @@ public sealed class UsersControllerTests
         var userId = "user-1";
         var username = "testuser";
         var email = "testuser@example.com";
-        var userSummary = new UserSummary(userId, username, email);
+        var password = "password123";
+        var userSummary = new UserSummary(userId, username, email, password);
         userService.Setup(service => service.CreateUserAsync(userSummary, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApiResponse<UserSummary>(true, new[] { userSummary }.ToList(), 1));
 

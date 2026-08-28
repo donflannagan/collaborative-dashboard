@@ -1,4 +1,5 @@
 using CollaborativeDashboard.Api.Models;
+using CollaborativeDashboard.Api.Exceptions;
 using MongoDB.Driver;
 
 namespace CollaborativeDashboard.Api.Services;
@@ -20,7 +21,9 @@ public class UsersService
         var data = new UserSummary(
             user.Id,
             user.Username,
-            user.Email);
+            user.Email,
+            user.Password
+            );
         return new ApiResponse<UserSummary>(true, new[] { data }.ToList(), 1);
     }
 
@@ -35,7 +38,9 @@ public class UsersService
         var data = new UserSummary(
             user.Id,
             user.Username,
-            user.Email);
+            user.Email,
+            user.Password
+            );
         return new ApiResponse<UserSummary>(true, new[] { data }.ToList(), 1);
     }
 
@@ -50,7 +55,8 @@ public class UsersService
         var data = new UserSummary(
             user.Id,
             user.Username,
-            user.Email);
+            user.Email,
+            user.Password);
         return new ApiResponse<UserSummary>(true, new[] { data }.ToList(), 1);
     }
 
@@ -60,7 +66,8 @@ public class UsersService
         var data = users.Select(user => new UserSummary(
             user.Id,
             user.Username,
-            user.Email)).ToList();
+            user.Email,
+            user.Password)).ToList();
         return new ApiResponse<UserSummary>(true, data, data.Count);
     }
     
@@ -84,7 +91,8 @@ public class UsersService
 
         var update = Builders<UserDocument>.Update
             .Set(u => u.Username, user.Username)
-            .Set(u => u.Email, user.Email);
+            .Set(u => u.Email, user.Email)
+            .Set(u => u.Password, user.Password);
 
         var result = await db.Users.UpdateOneAsync(u => u.Id == userSummary._id, update, cancellationToken: cancellationToken);
         if (result.ModifiedCount == 0)
@@ -95,7 +103,8 @@ public class UsersService
         var data = new UserSummary(
             user.Id,
             user.Username,
-            user.Email);
+            user.Email,
+            user.Password);
         return new ApiResponse<UserSummary>(true, new[] { data }.ToList(), 1);
     }
 
@@ -104,14 +113,35 @@ public class UsersService
         var user = new UserDocument
         {
             Email = userSummary.Email,
-            Username = userSummary.Username
+            Username = userSummary.Username,
+            Password = userSummary.Password
         };
+
+        // Before creating the user, we must verify that the username is unique as is the email address
+        var existingUserByUsername = await db.Users.Find(u => u.Username == userSummary.Username).FirstOrDefaultAsync(cancellationToken);
+        if (existingUserByUsername != null)
+        {
+            // return a 409 Conflict response since the username already exists
+            Exceptions.ConflictException ex = new Exceptions.ConflictException("Username already exists");
+            throw ex;
+        }
+
+        var existingUserByEmail = await db.Users.Find(u => u.Email == userSummary.Email).FirstOrDefaultAsync(cancellationToken);
+        if (existingUserByEmail != null)
+        {
+            // return a 409 Conflict response since the email already exists
+            Exceptions.ConflictException ex = new Exceptions.ConflictException("Email already exists");
+            throw ex;
+        }
+
+        // email address and username are unique, we can proceed to insert the new user
         await db.Users.InsertOneAsync(user, cancellationToken: cancellationToken);
 
         var data = new UserSummary(
             user.Id,
             user.Username,
-            user.Email);
+            user.Email,
+            user.Password);
         return new ApiResponse<UserSummary>(true, new[] { data }.ToList(), 1);
     }
 }
