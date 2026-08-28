@@ -150,5 +150,5 @@ public class TaskService
     {
         if (string.IsNullOrWhiteSpace(taskId)) throw new ArgumentException("Task ID is required");
     }
-    private static UserSummary Summary(UserDocument user) => new(user.Id, user.Username, user.Email);
+    private static UserSummary Summary(UserDocument user) => new(user.Id, user.Username, user.Email, user.Password);
 }

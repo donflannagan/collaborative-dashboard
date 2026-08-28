@@ -20,8 +20,8 @@ console.log('API Client Config:', {
 });
 
 // Prefix to specify which backend we target through the API gateway
-const targetBackendPrefix = "/api/csharp/"
-//const targetBackendPrefix = "/api/node/"
+//const targetBackendPrefix = "/api/csharp/"
+const targetBackendPrefix = "/api/node/"
 //const targetBackendPrefix = "/api/java/"
 
 export { apiClient, targetBackendPrefix };

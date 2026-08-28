@@ -15,7 +15,7 @@ const PORT = process.env.GATEWAY_PORT || 8080;
 app.use(helmet());
 app.use(morgan('combined'));
 app.use(cors());
-app.use(express.json());
+//app.use(express.json());
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

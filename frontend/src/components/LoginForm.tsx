@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { userService } from '../services/userService';
+import type { UserResponse } from '../models/user';
 
 export default function LoginForm() {
   // Manage form field states
@@ -18,12 +19,15 @@ export default function LoginForm() {
     setIsLoading(true);
 
     try {
-      // Replace with your actual auth API call
-      const user = await userService.getUserByEmail(email);
+      const user: UserResponse | null = await userService.getUserByEmail(email);
       console.log('Fetched user by email:', user);
-      
-      alert('Login successful!');
+      if(user) {
+        console.log(JSON.stringify(user));
+        // redirect when we are successfully logged in
+      } 
     } catch (err) {
+      console.log(err.message);
+      console.error(err);
       setError('Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
@@ -93,10 +97,10 @@ export default function LoginForm() {
       </form>
 
       <p className="mt-4 text-sm text-gray-600">
-        Don't have an account? <a href="/register" className="text-indigo-600 hover:text-indigo-500">Register</a>
+        Don't have an account? <a href="/user/addUser" className="text-indigo-600 hover:text-indigo-500">Register</a>
       </p>
       <p className="mt-4 text-sm text-gray-600">
-        Forgot your password? <a href="/forgot-password" className="text-indigo-600 hover:text-indigo-500">Reset it</a>
+        Forgot your password? <a href="/user/forgotPassword" className="text-indigo-600 hover:text-indigo-500">Reset it</a>
       </p>              
     </div>
   );

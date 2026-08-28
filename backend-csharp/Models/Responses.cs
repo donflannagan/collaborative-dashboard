@@ -2,7 +2,8 @@ namespace CollaborativeDashboard.Api.Models;
 
 public sealed record UserSummary(string _id, 
     string Username, 
-    string Email
+    string Email,
+    string Password 
 );
 
 public sealed record BoardResponse(string _id, 
