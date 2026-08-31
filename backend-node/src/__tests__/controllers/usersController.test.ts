@@ -115,12 +115,13 @@ describe('Users Controller', () => {
 
   describe('mutating endpoints', () => {
     it('creates a user with a 201 response and standard envelope', async () => {
-      mockRequest = { body: { email: user.email, username: user.username } };
+      const password = 'test-password';
+      mockRequest = { body: { email: user.email, username: user.username, password } };
       vi.mocked(User.create).mockResolvedValue(user as any);
 
       await createUser(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(User.create).toHaveBeenCalledWith({ email: user.email, username: user.username });
+      expect(User.create).toHaveBeenCalledWith({ email: user.email, username: user.username, password });
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith({ success: true, data: [user], count: 1 });
     });
@@ -173,7 +174,7 @@ describe('Users Controller', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Email and username are required',
+        error: 'Email, username, and password are required',
       });
       expect(User.create).not.toHaveBeenCalled();
     });
