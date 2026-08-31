@@ -1,0 +1,38 @@
+name: C# CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - 'feat/**'
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+      - 'feat/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend-csharp
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Environment
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore Tests/CollaborativeDashboard.Api.Tests.csproj
+
+      - name: Run Test Suite
+        run: dotnet test Tests/CollaborativeDashboard.Api.Tests.csproj --no-restore --configuration Release
