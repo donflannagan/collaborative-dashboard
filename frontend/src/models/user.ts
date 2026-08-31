@@ -33,3 +33,8 @@ export interface UpdateUserRequest {
 export interface DeleteUserRequest {
   _id: string;
 } 
+
+export interface ResetPasswordRequest {
+  _id: string;
+  newPassword: string;
+}
