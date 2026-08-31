@@ -1,0 +1,37 @@
+name: Java CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - 'feat/**'
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+      - 'feat/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend-java
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java Environment
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Run Test Suite
+        run: mvn test --batch-mode
