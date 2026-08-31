@@ -1,5 +1,6 @@
 package com.collaborative.dashboard.controller;
 
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,42 +32,78 @@ class UserControllerTest {
         private final ApiResponse<List<UserSummary>> response = new ApiResponse<>(true, List.of(user), 1);
 
         @Test
-        void supportsUserLookupRoutes() throws Exception {
+        void getsUserById() throws Exception {
                 when(userService.getUserById("user-1")).thenReturn(response);
-                when(userService.getUserByUsername("testuser")).thenReturn(response);
-                when(userService.getUserByEmail("testuser@example.com")).thenReturn(response);
 
                 assertUserResponse("/api/users/by-userId/user-1");
-                assertUserResponse("/api/users/by-username/testuser");
-                assertUserResponse("/api/users/by-email/testuser@example.com");
+                verify(userService).getUserById("user-1");
         }
 
         @Test
-        void supportsCollectionAndMutationRoutes() throws Exception {
+        void getsUserByUsername() throws Exception {
+                when(userService.getUserByUsername("testuser")).thenReturn(response);
+
+                assertUserResponse("/api/users/by-username/testuser");
+                verify(userService).getUserByUsername("testuser");
+        }
+
+        @Test
+        void getsUserByEmail() throws Exception {
+                when(userService.getUserByEmail("testuser@example.com")).thenReturn(response);
+
+                assertUserResponse("/api/users/by-email/testuser@example.com");
+                verify(userService).getUserByEmail("testuser@example.com");
+        }
+
+        @Test
+        void getsAllUsers() throws Exception {
                 when(userService.getAllUsers()).thenReturn(response);
-                when(userService.createUser(user)).thenReturn(response);
-                when(userService.updateUserById("user-1", user)).thenReturn(response);
-                when(userService.deleteUserById("user-1")).thenReturn(response);
 
                 mockMvc.perform(get("/api/users"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.success").value(true))
                                 .andExpect(jsonPath("$.count").value(1));
 
-                String body = "{\"_id\":\"user-1\",\"username\":\"testuser\",\"email\":\"testuser@example.com\", \"password\":\"password123\"}";
-                mockMvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(body))
+                verify(userService).getAllUsers();
+        }
+
+        @Test
+        void createsUser() throws Exception {
+                when(userService.createUser(user)).thenReturn(response);
+
+                mockMvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(userRequestBody()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.data[0]._id").value("user-1"));
 
+                verify(userService).createUser(user);
+        }
+
+        @Test
+        void updatesUser() throws Exception {
+                when(userService.updateUserById("user-1", user)).thenReturn(response);
+
                 mockMvc.perform(put("/api/users/update/user-1")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(body))
+                                .content(userRequestBody()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.data[0].username").value("testuser"));
+
+                verify(userService).updateUserById("user-1", user);
+        }
+
+        @Test
+        void deletesUser() throws Exception {
+                when(userService.deleteUserById("user-1")).thenReturn(response);
 
                 mockMvc.perform(delete("/api/users/delete/user-1"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.count").value(1));
+
+                verify(userService).deleteUserById("user-1");
+        }
+
+        private String userRequestBody() {
+                return "{\"_id\":\"user-1\",\"username\":\"testuser\",\"email\":\"testuser@example.com\"}";
         }
 
         private void assertUserResponse(String path) throws Exception {
