@@ -4,6 +4,7 @@ import { getTasksByBoard, getTaskById, addTask, updateTask, deleteTask, getTasks
 const taskRouter = Router();
 
 taskRouter.get('/board/:boardId', getTasksByBoard);
+taskRouter.get('/board', getTasksByBoard);
 taskRouter.get('/:taskId', getTaskById);
 taskRouter.post('/add', addTask);
 taskRouter.put('/update', updateTask);
