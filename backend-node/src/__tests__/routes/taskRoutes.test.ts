@@ -9,12 +9,18 @@ import * as taskController from '../../controllers/taskController';
 vi.mock('../../controllers/taskController', () => {
   return {
     getTasksByBoard: vi.fn(),
+    getTaskById: vi.fn(),
+    addTask: vi.fn(),
+    updateTask: vi.fn(),
+    deleteTask: vi.fn(),
+    getTasksByUser: vi.fn(),
   };
 });
 
 const app = express();
 app.use(express.json());
 app.use('/api/tasks', taskRoutes);
+app.use((_req, res) => res.sendStatus(404));
 
 describe('Task Routes', () => {
   beforeEach(() => {
@@ -96,7 +102,8 @@ describe('Task Routes', () => {
 
       const response = await request(app).get('/api/tasks/board/');
       
-      expect(response.status).toBe(404); // Route not found because no ID provided
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ success: false, error: 'Board ID is required' });
     });
   });
 });

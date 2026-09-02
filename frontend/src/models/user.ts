@@ -38,3 +38,8 @@ export interface ResetPasswordRequest {
   _id: string;
   newPassword: string;
 }
+
+export interface UserLookupResponse {
+  success: boolean;
+  user: UserResponse[];
+}

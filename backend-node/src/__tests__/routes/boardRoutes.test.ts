@@ -9,6 +9,7 @@ import * as boardController from '../../controllers/boardController';
 vi.mock('../../controllers/boardController', () => {
   return {
     getAllBoards: vi.fn(),
+    getBoardById: vi.fn(),
     getBoardsByUser: vi.fn(),
     deleteBoard: vi.fn(),
     createBoard: vi.fn(),
@@ -89,6 +90,21 @@ describe('Board Routes', () => {
       await request(app).get(`/api/boards/user/${userId}`);
       
       expect(boardController.getBoardsByUser).toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /api/boards/:boardId', () => {
+    it('should call getBoardById controller with boardId param', async () => {
+      const boardId = new mongoose.Types.ObjectId().toString();
+      vi.mocked(boardController.getBoardById).mockImplementation(async (req: any, res: any) => {
+        res.status(200).json({ success: true, data: { _id: req.params.boardId } });
+      });
+
+      const response = await request(app).get(`/api/boards/${boardId}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data._id).toBe(boardId);
+      expect(boardController.getBoardById).toHaveBeenCalled();
     });
   });
 });

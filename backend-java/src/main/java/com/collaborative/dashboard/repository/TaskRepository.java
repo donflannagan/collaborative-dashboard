@@ -12,4 +12,7 @@ public interface TaskRepository extends MongoRepository<Task, String> {
     // filter must be built with ObjectId explicitly rather than a derived query.
     @Query("{ 'boardId': ?0 }")
     List<Task> findByBoardId(ObjectId boardId, Sort sort);
+
+    @Query("{ '$or': [{ 'createdBy': ?0 }, { 'assignee': ?0 }] }")
+    List<Task> findByUserId(ObjectId userId, Sort sort);
 }
