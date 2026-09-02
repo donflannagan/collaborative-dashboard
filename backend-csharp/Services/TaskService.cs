@@ -18,24 +18,21 @@ public class TaskService
         var tasks = await db.Tasks.Find(filter)
             .SortBy(task => task.ColumnId)
             .ThenBy(task => task.Position)
-            .ToListAsync(cancellationToken);        
-        
-        ValidateTasks(tasks);
+            .ToListAsync(cancellationToken);
+        return await BuildResponseAsync(tasks, cancellationToken);
+    }
 
-        var ids = tasks.SelectMany(task => new[] { task.Assignee, task.CreatedBy }).Where(id => id != null).Distinct().ToList()!;
-        var users = await db.Users.Find(Builders<UserDocument>.Filter.In(user => user.Id, ids)).ToListAsync(cancellationToken);
-        
-        ValidateUsers(users);
+    public virtual async Task<ApiResponse<TaskResponse>> GetByUserAsync(string userId, CancellationToken cancellationToken)
+    {
+        ValidateUserId(userId);
 
-        var byId = users.ToDictionary(user => user.Id);
-        
-        var data = tasks.Select(task => new TaskResponse(
-            task.Id, task.Title, task.Description, task.BoardId, task.ColumnId, task.Position,
-            task.Assignee != null && byId.TryGetValue(task.Assignee, out var assignee) ? Summary(assignee) : null,
-            task.Priority, task.DueDate, task.Tags,
-            byId.TryGetValue(task.CreatedBy, out var creator) ? Summary(creator) : null,
-            task.CreatedAt, task.UpdatedAt)).ToList();
-        return new ApiResponse<TaskResponse>(true, data, data.Count);
+        var filter = Builders<TaskDocument>.Filter.Or(
+            Builders<TaskDocument>.Filter.Eq(task => task.CreatedBy, userId),
+            Builders<TaskDocument>.Filter.Eq(task => task.Assignee, userId));
+        var tasks = await db.Tasks.Find(filter)
+            .SortByDescending(task => task.UpdatedAt)
+            .ToListAsync(cancellationToken);
+        return await BuildResponseAsync(tasks, cancellationToken);
     }
 
     public virtual async Task<ApiResponse<TaskResponse>> GetTaskByIdAsync(string taskId, CancellationToken cancellationToken)
@@ -49,7 +46,6 @@ public class TaskService
 
         var ids = new[] { task.Assignee, task.CreatedBy }.Where(id => id != null).Distinct().ToList()!;
         var users = await db.Users.Find(Builders<UserDocument>.Filter.In(user => user.Id, ids)).ToListAsync(cancellationToken);
-        ValidateUsers(users);
 
         var byId = users.ToDictionary(user => user.Id);
 
@@ -71,8 +67,6 @@ public class TaskService
 
         var ids = new[] { request.Assignee, request.CreatedBy }.Where(id => id != null).Distinct().ToList()!;
         var users = await db.Users.Find(Builders<UserDocument>.Filter.In(user => user.Id, ids)).ToListAsync(cancellationToken);
-
-        ValidateUsers(users);
         
         var byId = users.ToDictionary(user => user.Id);
         var data = new TaskResponse(
@@ -137,18 +131,34 @@ public class TaskService
         if (filter == null) throw new ArgumentException("Invalid filter for board ID");
     }
 
-    private static void ValidateTasks(List<TaskDocument> tasks)
-    {
-        if (tasks == null || tasks.Count == 0) throw new ArgumentException("No tasks found for the given board ID");
-    }
-
-    private static void ValidateUsers(List<UserDocument> users)
-    {
-        if (users == null || users.Count == 0) throw new ArgumentException("No users found for the given tasks");
-    }
     private static void ValidateTaskId(string taskId)
     {
         if (string.IsNullOrWhiteSpace(taskId)) throw new ArgumentException("Task ID is required");
     }
+
+    private static void ValidateUserId(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required");
+    }
+
+    private async Task<ApiResponse<TaskResponse>> BuildResponseAsync(List<TaskDocument> tasks, CancellationToken cancellationToken)
+    {
+        var ids = tasks.SelectMany(task => new[] { task.Assignee, task.CreatedBy })
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList()!;
+        var users = ids.Count == 0
+            ? []
+            : await db.Users.Find(Builders<UserDocument>.Filter.In(user => user.Id, ids)).ToListAsync(cancellationToken);
+        var byId = users.ToDictionary(user => user.Id);
+        var data = tasks.Select(task => new TaskResponse(
+            task.Id, task.Title, task.Description, task.BoardId, task.ColumnId, task.Position,
+            task.Assignee != null && byId.TryGetValue(task.Assignee, out var assignee) ? Summary(assignee) : null,
+            task.Priority, task.DueDate, task.Tags,
+            byId.TryGetValue(task.CreatedBy, out var creator) ? Summary(creator) : null,
+            task.CreatedAt, task.UpdatedAt)).ToList();
+        return new ApiResponse<TaskResponse>(true, data, data.Count);
+    }
+
     private static UserSummary Summary(UserDocument user) => new(user.Id, user.Username, user.Email, user.Password);
 }

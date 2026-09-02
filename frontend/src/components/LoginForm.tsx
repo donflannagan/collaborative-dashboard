@@ -1,16 +1,16 @@
-
-import React, { useState } from 'react';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../AppContext';
 import { userService } from '../services/userService';
-import type { UserResponse } from '../models/user';
+import type { UserResponse, UserLookupResponse } from '../models/user';
 
 export default function LoginForm() {
-  // Manage form field states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
-  // Manage UI states (errors and submission loading)
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { setUserId } = useAuth();
+  const navigate = useNavigate();
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -19,14 +19,19 @@ export default function LoginForm() {
     setIsLoading(true);
 
     try {
-      const user: UserResponse | null = await userService.getUserByEmail(email);
-      console.log('Fetched user by email:', user);
+      const response: UserLookupResponse = await userService.getUserByEmail(email);
+      const user = response.user.length > 0 ? response.user[0] : null;
       if(user) {
-        console.log(JSON.stringify(user));
-        // redirect when we are successfully logged in
+        setUserId(user._id);
+        setError(''); 
+        setPassword(''); 
+        setEmail('');
+        navigate('/boards');
+      } else {
+        setError('Invalid email or password. Please try again.');
       } 
     } catch (err) {
-      console.log(err.message);
+      console.log((err as Error).message);
       console.error(err);
       setError('Invalid email or password. Please try again.');
     } finally {

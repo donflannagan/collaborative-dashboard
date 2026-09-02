@@ -60,6 +60,19 @@ public sealed class TasksControllerTests
     }
 
     [Fact]
+    public async Task GetByUserPassesUserIdToService()
+    {
+        taskService.Setup(service => service.GetByUserAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiResponse<TaskResponse>(true, [], 0));
+
+        var response = await controller.GetTasksByUser("user-1", CancellationToken.None);
+
+        Assert.True(response.Success);
+        Assert.Empty(response.Data);
+        taskService.Verify(service => service.GetByUserAsync("user-1", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task GetByIdReturnsTaskAndCount()
     {
         var taskTitle = "Task GetById Unit Test";

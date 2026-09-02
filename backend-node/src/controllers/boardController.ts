@@ -41,6 +41,23 @@ export async function getBoardsByUser(req: Request, res: Response, next: NextFun
   }
 }
 
+export async function getBoardById(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const board = await Board.findById(req.params.boardId)
+      .populate('owner', 'username email')
+      .populate('members', 'username email');
+
+    if (!board) {
+      res.status(404).json({ success: false, error: 'Board not found' });
+      return;
+    }
+
+    res.status(200).json({ success: true, data: board });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function createBoard(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
       const { title, description, owner, members } = req.body;
