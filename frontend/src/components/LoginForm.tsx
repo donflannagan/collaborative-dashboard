@@ -9,7 +9,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { setUserId } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   // Handle form submission
@@ -22,7 +22,7 @@ export default function LoginForm() {
       const response: UserLookupResponse = await userService.getUserByEmail(email);
       const user = response.user.length > 0 ? response.user[0] : null;
       if(user) {
-        setUserId(user._id);
+        login(user._id);
         setError(''); 
         setPassword(''); 
         setEmail('');

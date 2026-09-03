@@ -20,6 +20,7 @@ export interface IUserSummary {
 export interface ICreateBoardInput {
   title: string;
   description?: string;
+  owner: string;
   members: string[];
   columns: string[];
 }

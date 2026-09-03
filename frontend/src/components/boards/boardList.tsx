@@ -5,9 +5,10 @@ import { boardService } from '../../services/boardService';
 
 interface BoardListProps {
   onSelectBoard?: (id: string) => void;
+  onCreateBoard?: () => void;
 }
 
-const BoardListComponent = ({ onSelectBoard }: BoardListProps) => {
+const BoardListComponent = ({ onSelectBoard, onCreateBoard }: BoardListProps) => {
   const { userId } = useAuth();
   const [boards, setBoards] = useState<IBoard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,13 +40,20 @@ const BoardListComponent = ({ onSelectBoard }: BoardListProps) => {
   return (
     <div className="w-full max-w-6xl mx-auto p-6 bg-white rounded-xl shadow-md space-y-6">
       {/* Header Section */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-gray-800 tracking-tight">Your Boards</h2>
-        {!isLoading && userId && boards.length > 0 && (
-          <span className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-full font-medium">
-            Total: {boards.length}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {!isLoading && userId && boards.length > 0 && (
+            <span className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-full font-medium">
+              Total: {boards.length}
+            </span>
+          )}
+          {userId && onCreateBoard && (
+            <button onClick={onCreateBoard} className="rounded-md bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800">
+              Create board
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Red Gradient Error Alert Banner */}
