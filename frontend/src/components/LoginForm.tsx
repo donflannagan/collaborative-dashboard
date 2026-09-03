@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AppContext';
 import { userService } from '../services/userService';
-import type { UserResponse, UserLookupResponse } from '../models/user';
+import type { UserLookupResponse } from '../models/user';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -13,7 +13,7 @@ export default function LoginForm() {
   const navigate = useNavigate();
 
   // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // Prevent page refresh
     setError('');
     setIsLoading(true);

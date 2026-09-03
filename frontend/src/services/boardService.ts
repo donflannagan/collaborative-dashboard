@@ -1,5 +1,5 @@
 import { apiClient, targetBackendPrefix } from './apiClient';
-import { IBoard, IBoardListResponse, IBoardResponse, ICreateBoardInput } from '../models/board';
+import { IBoardListResponse, IBoardResponse, ICreateBoardInput } from '../models/board';
 
 export const boardService = {
     getAllBoards: async (): Promise<IBoardListResponse> => {

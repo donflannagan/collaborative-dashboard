@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext(null);
 const SESSION_STORAGE_KEY = 'session';
@@ -34,10 +34,10 @@ export function AuthProvider({ children }) {
     setSession(newSession);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem(SESSION_STORAGE_KEY);
     setSession(null);
-  };
+  }, []);
 
   // auto-logout once the session's TTL elapses while the app is open
   useEffect(() => {
@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
     const msUntilExpiry = session.expiresAt - Date.now();
     const timer = setTimeout(logout, msUntilExpiry);
     return () => clearTimeout(timer);
-  }, [session]);
+  }, [session, logout]);
 
   return (
     <AuthContext.Provider value={{ userId, login, logout }}>

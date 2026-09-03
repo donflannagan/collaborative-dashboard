@@ -139,7 +139,7 @@ const BoardListComponent = ({ onSelectBoard, onCreateBoard }: BoardListProps) =>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
                         <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600 uppercase">
-                          {board.owner.username}
+                          {board.owner?.username ?? ''}
                         </div>
                       </div>
                     </td>
