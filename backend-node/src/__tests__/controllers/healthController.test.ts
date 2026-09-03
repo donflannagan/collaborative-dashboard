@@ -99,4 +99,22 @@ describe('Health Controller', () => {
       message: "Internal tracking failure" 
     }));
   });
+
+  it('should stringify a non-Error value thrown during the health check', () => {
+    // Arrange
+    vi.mocked(mockHealthServiceInstance.checkHealth).mockImplementation(() => {
+      throw "unexpected failure";
+    });
+
+    // Act
+    controller.healthCheck(mockRequest as Request, mockResponse as Response);
+
+    // Assert
+    expect(responseStatusMock).toHaveBeenCalledWith(500);
+    expect(responseJsonMock).toHaveBeenCalledWith(expect.objectContaining({
+      status: "Error",
+      message: "Internal tracking failure",
+      error: "unexpected failure",
+    }));
+  });
 });

@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { 
   getAllBoards, 
   getBoardsByUser, 
+  getBoardById,
   deleteBoard, 
   createBoard, 
   updateBoard 
@@ -15,6 +16,7 @@ vi.mock('../../models/Board', () => {
   return {
     Board: {
       find: vi.fn(),
+      findById: vi.fn(),
       findByIdAndDelete: vi.fn(),
       findByIdAndUpdate: vi.fn(),
       create: vi.fn(),
@@ -177,6 +179,50 @@ describe('Board Controller', () => {
     });
   });
 
+  describe('getBoardById', () => {
+    it('should return the board when found', async () => {
+      const boardId = new mongoose.Types.ObjectId().toString();
+      const mockBoard = {
+        _id: boardId,
+        title: 'Team Board',
+        owner: { _id: new mongoose.Types.ObjectId(), username: 'owner', email: 'owner@example.com' },
+        members: [],
+      };
+      mockRequest = { params: { boardId } };
+      vi.mocked(Board.findById).mockReturnValue(createMockFindChain(mockBoard) as any);
+
+      await getBoardById(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(Board.findById).toHaveBeenCalledWith(boardId);
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: true, data: mockBoard });
+    });
+
+    it('should return 404 when the board is not found', async () => {
+      const boardId = new mongoose.Types.ObjectId().toString();
+      mockRequest = { params: { boardId } };
+      vi.mocked(Board.findById).mockReturnValue(createMockFindChain(null) as any);
+
+      await getBoardById(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Board not found' });
+    });
+
+    it('should handle errors and pass to next middleware', async () => {
+      const boardId = new mongoose.Types.ObjectId().toString();
+      const error = new Error('Database error');
+      mockRequest = { params: { boardId } };
+      const populate2 = vi.fn().mockRejectedValue(error);
+      const populate1 = vi.fn().mockReturnValue({ populate: populate2 });
+      vi.mocked(Board.findById).mockReturnValue({ populate: populate1 } as any);
+
+      await getBoardById(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+  });
+
   describe('deleteBoard', () => {
     it('should delete a board successfully', async () => {
       const boardId = new mongoose.Types.ObjectId().toString();
@@ -210,6 +256,27 @@ describe('Board Controller', () => {
 
       expect(mockNext).toHaveBeenCalledWith(error);
     });
+
+    it('should return 404 when the board to delete is not found', async () => {
+      const boardId = new mongoose.Types.ObjectId().toString();
+      mockRequest = { params: { boardId } };
+      vi.mocked(Board.findByIdAndDelete).mockResolvedValue(null);
+
+      await deleteBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Board not found' });
+    });
+
+    it('should return 400 when boardId is missing', async () => {
+      mockRequest = { params: {} };
+
+      await deleteBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Board ID is required' });
+      expect(Board.findByIdAndDelete).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateBoard', () => {
@@ -241,6 +308,38 @@ describe('Board Controller', () => {
         success: true,
         data: mockPopulatedBoard,
       });
+    });
+
+    it('should return 404 when the board to update is not found', async () => {
+      const boardId = new mongoose.Types.ObjectId().toString();
+      mockRequest = { params: { boardId }, body: { title: 'Updated Board' } };
+      vi.mocked(Board.findByIdAndUpdate).mockResolvedValue(null);
+
+      await updateBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Board not found' });
+    });
+
+    it('should return 400 when boardId is missing', async () => {
+      mockRequest = { params: {}, body: { title: 'Updated Board' } };
+
+      await updateBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Board ID is required' });
+      expect(Board.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should handle errors and pass to next middleware', async () => {
+      const boardId = new mongoose.Types.ObjectId().toString();
+      const error = new Error('Database error');
+      mockRequest = { params: { boardId }, body: { title: 'Updated Board' } };
+      vi.mocked(Board.findByIdAndUpdate).mockRejectedValue(error);
+
+      await updateBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(error);
     });
   });
 
