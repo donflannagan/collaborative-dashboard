@@ -7,7 +7,16 @@ export default function BoardList(BoardListProps: any) {
     const handleBoardSelect = (id: string) => {
         navigate(`/board/${id}`, { state: { boardId: id } });
     };
+
+    const handleCreateBoard = () => {
+        navigate('/board/create');
+    };
+
     return (
-        <BoardListComponent {...BoardListProps} onSelectBoard={handleBoardSelect} />
+        <BoardListComponent
+            {...BoardListProps}
+            onSelectBoard={handleBoardSelect}
+            onCreateBoard={handleCreateBoard}
+        />
     );
 }

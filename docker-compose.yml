@@ -138,6 +138,7 @@ services:
       - "3000:3000"
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+      VITE_SESSION_TTL_MS: ${VITE_SESSION_TTL_MS:-1800000}
     depends_on:
       - gateway
     networks:
