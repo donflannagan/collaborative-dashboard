@@ -1,16 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { getTasksByBoard } from '../../controllers/taskController';
+import { addTask, deleteTask, getTaskById, getTasksByBoard, getTasksByUser, updateTask } from '../../controllers/taskController';
 import { Task } from '../../models/Task';
 
 // 1. Explicitly mock the Task model natively
 vi.mock('../../models/Task', () => {
-  return {
-    Task: {
-      find: vi.fn()
-    }
-  };
+  const TaskMock: any = vi.fn();
+  TaskMock.find = vi.fn();
+  TaskMock.findById = vi.fn();
+  TaskMock.findByIdAndUpdate = vi.fn();
+  TaskMock.findByIdAndDelete = vi.fn();
+  return { Task: TaskMock };
 });
 
 describe('Task Controller', () => {
@@ -156,6 +157,275 @@ describe('Task Controller', () => {
       vi.mocked(Task.find).mockReturnValue(chain as any);
 
       await getTasksByBoard(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe('getTaskById', () => {
+    const buildTaskQueryChain = (resolvedValue: any) => {
+      const populate2Spy = vi.fn().mockResolvedValue(resolvedValue);
+      const populate1Spy = vi.fn().mockReturnValue({ populate: populate2Spy });
+      return { populate: populate1Spy };
+    };
+
+    it('returns the task when found', async () => {
+      const taskId = new mongoose.Types.ObjectId().toString();
+      const task = { _id: taskId, title: 'Task 1' };
+      mockRequest = { params: { taskId } };
+      vi.mocked(Task.findById).mockReturnValue(buildTaskQueryChain(task) as any);
+
+      await getTaskById(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(Task.findById).toHaveBeenCalledWith(taskId);
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: true, data: task });
+    });
+
+    it('returns 404 when the task is not found', async () => {
+      const taskId = new mongoose.Types.ObjectId().toString();
+      mockRequest = { params: { taskId } };
+      vi.mocked(Task.findById).mockReturnValue(buildTaskQueryChain(null) as any);
+
+      await getTaskById(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Task not found' });
+    });
+
+    it('returns 400 when taskId is missing', async () => {
+      mockRequest = { params: {} };
+
+      await getTaskById(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Task ID is required' });
+      expect(Task.findById).not.toHaveBeenCalled();
+    });
+
+    it('passes database errors to the next middleware', async () => {
+      const taskId = new mongoose.Types.ObjectId().toString();
+      const error = new Error('Database connection failed');
+      mockRequest = { params: { taskId } };
+      const populate2Spy = vi.fn().mockRejectedValue(error);
+      const populate1Spy = vi.fn().mockReturnValue({ populate: populate2Spy });
+      vi.mocked(Task.findById).mockReturnValue({ populate: populate1Spy } as any);
+
+      await getTaskById(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe('addTask', () => {
+    const taskInput = {
+      title: 'New task',
+      description: 'Details',
+      boardId: new mongoose.Types.ObjectId().toString(),
+      columnId: 'To Do',
+      position: 0,
+      assignee: new mongoose.Types.ObjectId().toString(),
+      priority: 'medium',
+      dueDate: new Date('2026-01-01'),
+      tags: ['urgent'],
+      createdBy: new mongoose.Types.ObjectId().toString(),
+    };
+
+    it('creates and returns the new task', async () => {
+      const saveMock = vi.fn().mockImplementation(function (this: any) {
+        return Promise.resolve(this);
+      });
+      vi.mocked(Task).mockImplementation(function (this: any, data: any) {
+        Object.assign(this, data);
+        this.save = saveMock;
+      } as any);
+
+      mockRequest = { body: taskInput };
+
+      await addTask(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(saveMock).toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        data: expect.objectContaining({ title: taskInput.title }),
+      });
+    });
+
+    it('passes database errors to the next middleware', async () => {
+      const error = new Error('Database connection failed');
+      vi.mocked(Task).mockImplementation(function (this: any, data: any) {
+        Object.assign(this, data);
+        this.save = vi.fn().mockRejectedValue(error);
+      } as any);
+
+      mockRequest = { body: taskInput };
+
+      await addTask(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe('updateTask', () => {
+    const buildUpdateQueryChain = (resolvedValue: any) => {
+      const populate2Spy = vi.fn().mockResolvedValue(resolvedValue);
+      const populate1Spy = vi.fn().mockReturnValue({ populate: populate2Spy });
+      return { populate: populate1Spy };
+    };
+
+    it('updates and returns the task', async () => {
+      const taskId = new mongoose.Types.ObjectId().toString();
+      const updatedTask = { _id: taskId, title: 'Updated title' };
+      mockRequest = { body: { taskId, title: 'Updated title' } };
+      vi.mocked(Task.findByIdAndUpdate).mockReturnValue(buildUpdateQueryChain(updatedTask) as any);
+
+      await updateTask(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(Task.findByIdAndUpdate).toHaveBeenCalledWith(
+        taskId,
+        expect.objectContaining({ title: 'Updated title' }),
+        { new: true },
+      );
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: true, data: updatedTask });
+    });
+
+    it('returns 404 when the task to update is not found', async () => {
+      const taskId = new mongoose.Types.ObjectId().toString();
+      mockRequest = { body: { taskId, title: 'Updated title' } };
+      vi.mocked(Task.findByIdAndUpdate).mockReturnValue(buildUpdateQueryChain(null) as any);
+
+      await updateTask(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Task not found' });
+    });
+
+    it('returns 400 when taskId is missing', async () => {
+      mockRequest = { body: {} };
+
+      await updateTask(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Task ID is required' });
+      expect(Task.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('passes database errors to the next middleware', async () => {
+      const taskId = new mongoose.Types.ObjectId().toString();
+      const error = new Error('Database connection failed');
+      mockRequest = { body: { taskId, title: 'Updated title' } };
+      const populate2Spy = vi.fn().mockRejectedValue(error);
+      const populate1Spy = vi.fn().mockReturnValue({ populate: populate2Spy });
+      vi.mocked(Task.findByIdAndUpdate).mockReturnValue({ populate: populate1Spy } as any);
+
+      await updateTask(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe('deleteTask', () => {
+    it('deletes and returns the task', async () => {
+      const taskId = new mongoose.Types.ObjectId().toString();
+      const deletedTask = { _id: taskId, title: 'Task 1' };
+      mockRequest = { params: { taskId } };
+      vi.mocked(Task.findByIdAndDelete).mockResolvedValue(deletedTask as any);
+
+      await deleteTask(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(Task.findByIdAndDelete).toHaveBeenCalledWith(taskId);
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: true, data: deletedTask });
+    });
+
+    it('returns 404 when the task to delete is not found', async () => {
+      const taskId = new mongoose.Types.ObjectId().toString();
+      mockRequest = { params: { taskId } };
+      vi.mocked(Task.findByIdAndDelete).mockResolvedValue(null);
+
+      await deleteTask(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Task not found' });
+    });
+
+    it('returns 400 when taskId is missing', async () => {
+      mockRequest = { params: {} };
+
+      await deleteTask(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'Task ID is required' });
+      expect(Task.findByIdAndDelete).not.toHaveBeenCalled();
+    });
+
+    it('passes database errors to the next middleware', async () => {
+      const taskId = new mongoose.Types.ObjectId().toString();
+      const error = new Error('Database connection failed');
+      mockRequest = { params: { taskId } };
+      vi.mocked(Task.findByIdAndDelete).mockRejectedValue(error);
+
+      await deleteTask(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe('getTasksByUser', () => {
+    it('returns tasks assigned to the user', async () => {
+      const userId = new mongoose.Types.ObjectId().toString();
+      const mockTasks = [{ _id: new mongoose.Types.ObjectId(), title: 'Task 1', assignee: userId }];
+      mockRequest = { params: { userId } };
+
+      const { chain } = createMockQueryChain(mockTasks);
+      vi.mocked(Task.find).mockReturnValue(chain as any);
+
+      await getTasksByUser(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(Task.find).toHaveBeenCalledWith({ assignee: userId });
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockTasks,
+        count: mockTasks.length,
+      });
+    });
+
+    it('returns 400 when userId is missing', async () => {
+      mockRequest = { params: {} };
+
+      await getTasksByUser(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({ success: false, error: 'User ID is required' });
+      expect(Task.find).not.toHaveBeenCalled();
+    });
+
+    it('sorts tasks by boardId, columnId, and position', async () => {
+      const userId = new mongoose.Types.ObjectId().toString();
+      mockRequest = { params: { userId } };
+
+      const sortSpy = vi.fn().mockResolvedValue([]);
+      const { chain } = createMockQueryChain([], { sort: sortSpy });
+      vi.mocked(Task.find).mockReturnValue(chain as any);
+
+      await getTasksByUser(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(sortSpy).toHaveBeenCalledWith({ boardId: 1, columnId: 1, position: 1 });
+    });
+
+    it('passes database errors to the next middleware', async () => {
+      const userId = new mongoose.Types.ObjectId().toString();
+      const error = new Error('Database connection failed');
+      mockRequest = { params: { userId } };
+
+      const sortSpy = vi.fn().mockRejectedValue(error);
+      const { chain } = createMockQueryChain([], { sort: sortSpy });
+      vi.mocked(Task.find).mockReturnValue(chain as any);
+
+      await getTasksByUser(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(error);
     });
