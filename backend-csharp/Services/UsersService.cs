@@ -90,9 +90,9 @@ public class UsersService
         }
 
         var update = Builders<UserDocument>.Update
-            .Set(u => u.Username, user.Username)
-            .Set(u => u.Email, user.Email)
-            .Set(u => u.Password, user.Password);
+            .Set(u => u.Username, userSummary.Username)
+            .Set(u => u.Email, userSummary.Email)
+            .Set(u => u.Password, userSummary.Password);
 
         var result = await db.Users.UpdateOneAsync(u => u.Id == userSummary._id, update, cancellationToken: cancellationToken);
         if (result.ModifiedCount == 0)
@@ -101,10 +101,10 @@ public class UsersService
         }
 
         var data = new UserSummary(
-            user.Id,
-            user.Username,
-            user.Email,
-            user.Password);
+            userSummary._id,
+            userSummary.Username,
+            userSummary.Email,
+            userSummary.Password);
         return new ApiResponse<UserSummary>(true, new[] { data }.ToList(), 1);
     }
 
