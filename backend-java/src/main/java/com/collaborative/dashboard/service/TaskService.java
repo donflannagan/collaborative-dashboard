@@ -28,15 +28,7 @@ public class TaskService {
     }
 
     public ApiResponse<List<TaskResponse>> getTasksByBoard(String boardId) {
-        if (boardId == null || boardId.isBlank()) {
-            throw new IllegalArgumentException("Board ID is required");
-        }
-        ObjectId boardObjectId;
-        try {
-            boardObjectId = new ObjectId(boardId);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid Board ID format");
-        }
+        ObjectId boardObjectId = toObjectId(boardId, "Board ID");
         Sort sort = Sort.by(Sort.Order.asc("columnId"), Sort.Order.asc("position"));
         List<Task> tasks = taskRepository.findByBoardId(boardObjectId, sort);
         return response(tasks);
@@ -132,9 +124,6 @@ public class TaskService {
     }
 
     private void requireUpdateRequest(TaskRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("Task is required");
-        }
         requireValue(request.title(), "Title is required");
         toObjectId(request.boardId(), "Board ID");
         requireValue(request.columnId(), "Column ID is required");
