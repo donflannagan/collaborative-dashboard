@@ -23,6 +23,12 @@ type UserResponse struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+type UserRequest struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 func (user User) ToResponse() UserResponse {
 	return UserResponse{
 		ID:        user.ID.Hex(),
