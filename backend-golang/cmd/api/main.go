@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/donflannagan/collaborative-dashboard/backend-golang/internal/config"
 	"github.com/donflannagan/collaborative-dashboard/backend-golang/internal/models"
@@ -46,12 +47,17 @@ func main() {
 
 	router := app.routes()
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "5004"
+	}
+
 	server := &http.Server{
-		Addr:    ":5004",
+		Addr:    ":" + port,
 		Handler: router,
 	}
 
-	log.Println("Go API listening on http://localhost:5004")
+	log.Printf("Go API listening on http://localhost:%s", port)
 	log.Fatal(server.ListenAndServe())
 }
 

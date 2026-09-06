@@ -140,6 +140,7 @@ services:
     ports:
       - "5004:5004"
     environment:
+      PORT: 5004
       MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB_NAME:-collaborative-dashboard}?authSource=admin
       MONGO_DB_NAME: ${MONGO_DB_NAME:-collaborative-dashboard}
     depends_on:
