@@ -145,12 +145,12 @@ The Go service currently exposes these routes through the gateway:
 
 Node.js, .NET, and Java expose the same user endpoints through the gateway:
 
-| Method | Node path | .NET path | Java path | Description |
-| --- | --- | --- | --- | --- |
-| GET | `/api/node/users` | `/api/csharp/users` | `/api/java/users` | Get all users |
-| GET | `/api/node/users/by-userId/:userId` | `/api/csharp/users/by-userId/:userId` | `/api/java/users/by-userId/:userId` | Get a user by ID |
-| GET | `/api/node/users/by-username/:username` | `/api/csharp/users/by-username/:username` | `/api/java/users/by-username/:username` | Get a user by username |
-| GET | `/api/node/users/by-email/:email` | `/api/csharp/users/by-email/:email` | `/api/java/users/by-email/:email` | Get a user by email |
+| Method | Node path | .NET path | Java path | Go path | Description |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/api/node/users` | `/api/csharp/users` | `/api/java/users` | `/api/go/users` | Get all users |
+| GET | `/api/node/users/by-userId/:userId` | `/api/csharp/users/by-userId/:userId` | `/api/java/users/by-userId/:userId` | `/api/go/users/by-userId/:userId` | Get a user by ID |
+| GET | `/api/node/users/by-username/:username` | `/api/csharp/users/by-username/:username` | `/api/java/users/by-username/:username` | `/api/go/users/by-username/:username` | Get a user by username |
+| GET | `/api/node/users/by-email/:email` | `/api/csharp/users/by-email/:email` | `/api/java/users/by-email/:email` | `/api/go/users/by-email/:email` | Get a user by email |
 | POST | `/api/node/users` | `/api/csharp/users` | `/api/java/users` | Create a user |
 | PUT | `/api/node/users/update/:userId` | `/api/csharp/users/update/:userId` | `/api/java/users/update/:userId` | Update a user |
 | DELETE | `/api/node/users/delete/:userId` | `/api/csharp/users/delete/:userId` | `/api/java/users/delete/:userId` | Delete a user |
