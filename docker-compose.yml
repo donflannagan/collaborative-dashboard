@@ -17,11 +17,14 @@ services:
       JAVA_BACKEND_PORT: 5002
       CSHARP_BACKEND_HOST: backend-csharp
       CSHARP_BACKEND_PORT: 5003
+      GO_BACKEND_HOST: backend-golang
+      GO_BACKEND_PORT: 5004
     depends_on:
       - backend-node
       - fastapi-backend
       - java-backend
       - backend-csharp
+      - backend-golang
     networks:
       - collaborative-network
     volumes:
@@ -94,7 +97,7 @@ services:
       - ./backend-fastapi:/app
     command: uvicorn main:app --host 0.0.0.0 --port 5001 --reload
 
-  # Java Backend (port 5002) - Placeholder for future implementation
+  # Java Backend (port 5002)
   java-backend:
     build:
       context: ./backend-java
@@ -122,6 +125,23 @@ services:
     environment:
       ASPNETCORE_URLS: http://+:5003
       MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB_NAME:-collaborative-dashboard}?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - collaborative-network
+
+  # Go Backend (port 5004)
+  backend-golang:
+    build:
+      context: ./backend-golang
+      dockerfile: Dockerfile
+    container_name: collaborative-dashboard-backend-golang
+    ports:
+      - "5004:5004"
+    environment:
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB_NAME:-collaborative-dashboard}?authSource=admin
+      MONGO_DB_NAME: ${MONGO_DB_NAME:-collaborative-dashboard}
     depends_on:
       mongodb:
         condition: service_healthy

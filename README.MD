@@ -1,6 +1,6 @@
 # Collaborative Dashboard
 
-A multi-backend real-time task management application for learning and comparing Node.js, FastAPI, and Java APIs against a shared MongoDB database. An Express gateway provides one entry point for the frontend and routes requests by backend prefix.
+A multi-backend real-time task management application for learning and comparing Node.js, FastAPI, Java, C#, and Go APIs against a shared MongoDB database. An Express gateway provides one entry point for the frontend and routes requests by backend prefix.
 
 ## Architecture
 
@@ -13,6 +13,7 @@ Express gateway :8080
   /api/fastapi/*  -> backend-fastapi :5001
   /api/java/*     -> backend-java :5002
   /api/csharp/*   -> backend-csharp :5003
+  /api/go/*       -> backend-golang :5004
         |
         v
 MongoDB :27017
@@ -28,6 +29,7 @@ MongoDB :27017
 | FastAPI | 5001 | `backend-fastapi/` | FastAPI, Motor, Pydantic |
 | Java API | 5002 | `backend-java/` | Spring Boot, Spring Data MongoDB |
 | .NET API | 5003 | `backend-csharp/` | ASP.NET Core, MongoDB.Driver |
+| Go API | 5004 | `backend-golang/` | Chi, MongoDB Go Driver |
 | MongoDB | 27017 | Docker volume | Shared database |
 
 ## Quick Start with Docker
@@ -66,7 +68,7 @@ The main URLs are:
 - Node health through gateway: http://localhost:8080/api/node/health
 - FastAPI documentation: http://localhost:8080/api/fastapi/docs
 
-The Java service is a Spring Boot application packaged with Maven and built into a Java 17 runtime image.
+The Java service is a Spring Boot application packaged with Maven and built into a Java 17 runtime image. The Go service is compiled into a static binary and runs on port 5004.
 
 ## Gateway Routing
 
@@ -78,6 +80,7 @@ The gateway uses the first path segment after `/api` to select a backend:
 | `/api/fastapi` | FastAPI on port 5001 |
 | `/api/java` | Java API on port 5002 |
 | `/api/csharp` | .NET API on port 5003 |
+| `/api/go` | Go API on port 5004 |
 
 Examples:
 
@@ -128,6 +131,15 @@ The ASP.NET Core service exposes these routes through the gateway:
 | GET | `/api/csharp/boards` | Get all boards |
 | GET | `/api/csharp/boards/user/:userId` | Get boards owned by or shared with a user |
 | GET | `/api/csharp/tasks/board/:boardId` | Get a board's tasks sorted by column and position |
+
+### Go Backend
+
+The Go service currently exposes these routes through the gateway:
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| GET | `/api/go/health` | Go service health |
+| GET | `/api/go/users/by-email/:email` | Get a user by email |
 
 ### Users
 
@@ -203,6 +215,19 @@ mvn spring-boot:run
 
 The direct Java service runs on http://localhost:5002. Its MongoDB connection is read from `MONGODB_URI`, which should point to the local MongoDB instance when running outside Docker.
 
+### Go API
+
+The Go service requires Go 1.26 or later.
+
+```powershell
+cd backend-golang
+go mod tidy
+go test ./...
+go run ./cmd/api
+```
+
+The direct Go service runs on http://localhost:5004. Its MongoDB connection uses `MONGODB_URI` and `MONGO_DB_NAME`.
+
 ### Gateway
 
 ```powershell
@@ -224,9 +249,10 @@ npm run dev
 ```powershell
 docker compose exec backend-node npm test
 docker compose exec backend-fastapi pytest
+docker compose exec backend-golang go test ./...
 ```
 
-The Node test suite currently contains 23 passing tests covering board and task controllers and routes. The Java suite contains 5 MockMvc tests covering health, board, task, and bad-request responses. The FastAPI suite covers 6 endpoint and validation cases using an in-memory async database stub.
+The Node, Java, C#, and Go suites run independently in their backend directories. Java and C# service tests use real MongoDB containers through Testcontainers. The Go suite includes model and HTTP handler tests plus a MongoDB Testcontainers repository test.
 
 Java controller tests use MockMvc and cover health, board, task, and bad-request responses:
 
@@ -237,7 +263,7 @@ mvn test
 
 ### .NET API Tests
 
-The C# test project uses xUnit, Moq, and ASP.NET TestHost. It covers health, board, task, empty-result, and service-parameter behavior:
+The C# test project uses xUnit, Moq, ASP.NET TestHost, and Testcontainers. It enforces a 95% scoped coverage threshold:
 
 ```powershell
 cd backend-csharp
@@ -245,6 +271,13 @@ dotnet test .\Tests\CollaborativeDashboard.Api.Tests.csproj
 ```
 
 The C# Docker build runs these tests before publishing the production image.
+
+### Go API Tests
+
+```powershell
+cd backend-golang
+go test ./...
+```
 
 ## Environment Variables
 
@@ -262,6 +295,8 @@ VITE_API_URL=http://localhost:8080
 
 The Docker Compose file supplies service-to-service hostnames such as `backend-node`, `backend-fastapi`, `mongodb`, and `java-backend`. Do not use `localhost` for those hostnames from inside a container.
 
+The Go service uses the same shared MongoDB instance with `MONGODB_URI` and `MONGO_DB_NAME`.
+
 For local Java development, set the MongoDB connection explicitly if needed:
 
 ```powershell
@@ -277,6 +312,7 @@ collaborative-dashboard/
 ├── backend-fastapi/  # FastAPI API service
 ├── backend-java/     # Spring Boot API service
 ├── backend-csharp/   # ASP.NET Core API service
+├── backend-golang/   # Go API service
 ├── frontend/         # React/Vite application
 ├── shared-types/     # Shared TypeScript model definitions
 ├── docker-compose.yml
@@ -292,7 +328,9 @@ collaborative-dashboard/
 - Docker Compose: configured for the full stack
 - Java backend: Spring Boot read endpoints implemented and Docker-integrated
 - Node, Java, and C# tests: implemented and passing
-- C# test suite: 7 tests passing
+- C# test suite: 59 tests passing with a 95% scoped coverage gate
+- Java test suite: 29 tests passing with a 95% JaCoCo gate
+- Go test suite: model, handler, and MongoDB repository tests passing
 - FastAPI tests: implemented and passing
 - Authentication, write endpoints, and Mongo seed data: planned
 
