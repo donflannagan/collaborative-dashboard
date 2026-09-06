@@ -22,7 +22,7 @@ export const gatewayRouter = (req: Request, res: Response, next: NextFunction) =
   if (!backend) {
     return res.status(404).json({
       success: false,
-      error: `No backend found for path: ${req.path}. Available: /api/csharp, /api/node, /api/java`,
+      error: `No backend found for path: ${req.path}. Available: /api/csharp, /api/node, /api/java, /api/go`,
     });
   }
 

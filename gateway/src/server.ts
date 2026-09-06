@@ -53,6 +53,7 @@ app.get('/', (req: Request, res: Response) => {
         'FastAPI Backend': '/api/fastapi/*',
         'Java Backend': '/api/java/*',
         '.NET Backend': '/api/csharp/*',
+        'Go Backend': '/api/go/*',
       },
       examples: {
         getAllBoards: {
@@ -60,6 +61,7 @@ app.get('/', (req: Request, res: Response) => {
           fastapi: 'GET /api/fastapi/boards',
           java: 'GET /api/java/boards',
           csharp: 'GET /api/csharp/boards',
+          go: 'GET /api/go/health',
         },
         getTasksByBoard: {
           node: 'GET /api/node/tasks/board/:boardId',
@@ -86,6 +88,7 @@ app.get('/', (req: Request, res: Response) => {
             node: 'GET /api/node/users/by-email/:email',
             dotnet: 'GET /api/csharp/users/by-email/:email',
             java: 'GET /api/java/users/by-email/:email',
+            go: 'GET /api/go/users/by-email/:email',
           },
           create: {
             node: 'POST /api/node/users',

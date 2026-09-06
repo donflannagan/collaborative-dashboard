@@ -1,0 +1,40 @@
+name: Go CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - 'feat/**'
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+      - 'feat/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend-golang
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go Environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache: true
+          cache-dependency-path: backend-golang/go.sum
+
+      - name: Download Dependencies
+        run: go mod download
+
+      - name: Run Test Suite
+        run: go test ./...

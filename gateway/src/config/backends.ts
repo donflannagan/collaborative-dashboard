@@ -35,6 +35,13 @@ export const backends: BackendConfig[] = [
     port: 5003,
     forwardPrefix: '/api',
   },
+  {
+    name: 'Go Backend',
+    prefix: '/api/go',
+    target: `http://${process.env.GO_BACKEND_HOST || 'localhost'}:${process.env.GO_BACKEND_PORT || '5004'}`,
+    port: 5004,
+    forwardPrefix: '/api',
+  },
 ];
 
 export const getBackendByPrefix = (path: string): BackendConfig | undefined => {
